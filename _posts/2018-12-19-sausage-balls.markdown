@@ -7,6 +7,8 @@ categories: recipes
 
 These are historically called sausage balls because they use sausage but you can use any old ground meat and spice it yourself.
 
+<blockquote class="imgur-embed-pub" lang="en" data-id="IzfVnZr"><a href="//imgur.com/IzfVnZr">View post on imgur.com</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+
 ## Ingredients
 
 * ground meat
