@@ -6,6 +6,8 @@ category: movies
 
 I decided that I was going to watch all of the movies on the [imdb top 250 movie list](https://www.imdb.com/search/title?groups=top_250&sort=user_rating) and then write something here about them. Don't get too excited about that.
 
+As a note, I'm only watching a) what I haven't seen before, and b) what is available on netflix. So there isn't any special order to any of it.
+
 
 <ul>
   {% for post in site.categories.movies %}
