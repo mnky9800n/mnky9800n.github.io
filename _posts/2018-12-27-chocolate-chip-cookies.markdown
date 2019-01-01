@@ -9,7 +9,7 @@ categories: recipes
 
 This recipe started with this all recipes recipe that Chastity shared with me:
 
-https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/
+[cookie recipe](https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/)
 
 With some modifications. Basically, I did the following:
 
@@ -20,3 +20,5 @@ With some modifications. Basically, I did the following:
 * chopped up semi-sweet baking chocolate bars instead of a bag of chips
 
 I think overall they turned out well but I think they are slightly too cakey for my tastes and i would use half a cup less flour to make them more cookie like.
+
+*Update*: I reduced the flour by 1/6 and the cookies came out much better. (instead of 3 cups I used 2.5 cups)
