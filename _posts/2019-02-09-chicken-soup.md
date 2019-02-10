@@ -5,6 +5,8 @@ date:   2019-02-09 00:00:00 +0100
 categories: recipes
 ---
 
+<blockquote class="imgur-embed-pub" lang="en" data-id="a/FsXBadN" data-context="false"><a href="//imgur.com/FsXBadN">chicken soup</a></blockquote><script async src="//s.imgur.com/min/embed.js" charset="utf-8"></script>
+
 This is an easy recipe depending on if you make the stock or not. But if you want to make the stock, basically, do this:
 
 Stock Recipe:
