@@ -41,3 +41,5 @@ Notes:
 
 1. Use whatever vegetables you can find. I don't always use the ones listed here I've used leeks, cabbage, fennel, cauliflower ( i love cauliflower its the greatest thing ever tbh)
 2. This makes as much as it makes but if you like noodles in your chicken soup, add them when you want them. For me sometimes I just eat it like this to begin with, then when theres like a couple bowls left to reheat, I add some noodles and now i get like double the amount left. You know do whatever this is a very do whatever kind of recipe.
+3. You can add rice and eggs to this recipe to make an egg drop soup. Make rice (I recommend rice cooker), add to chicken soup. Beat eggs (usually I use around 6 eggs) thoroughly. Bring soup to boil, then slowly pour beaten eggs into soup. Cover for a couple minutes then remove from heat and serve. The eggs should be a bit fluffy but should mix well into everything.
+
