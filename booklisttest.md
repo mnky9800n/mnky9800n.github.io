@@ -1,0 +1,286 @@
+---
+layout: page
+title: John's read list
+permalink: /booklisttest/
+---
+
+<style>
+	.jumbotron {
+		background-image: url("../img/jumbotron_header.gif");
+		background-color: #17234E;
+		margin-bottom: 0;
+		min-height: 50%;
+		background-repeat: no-repeat;
+		background-position: center;
+		-webkit-background-size: cover;
+		background-size: 100%;
+		
+	}
+
+	.jumbotron h1{
+		color: #fff;
+	}
+
+	.jumbotron p{
+		color: #fff;
+		font-size: 18px;
+	}
+</style>
+
+<section class="jumbotron text-center">
+	<div class="container">
+		<h1 class="jumbotron-heading">Reading List</h1>
+		<p>Or rather a read list.</p>
+		<p>
+			<a href="#" class="btn btn-primary my-2" id="listView">List View</a>
+			<a href="#" class="btn btn-secondary my-2" id="tileView">Tile View</a>
+		</p>
+
+		<p>The source of this can be found <a href="https://github.com/mnky9800n/booklist">on github.</a></p>
+
+	</div>
+  </section>
+
+
+<main role="main" class="container">
+	<div class='container' id='tiles'>
+	</div>
+
+	<table class="table table-striped" id="data">
+	</table>
+</main>
+    
+<div id="bookInfo" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+	<div class="modal-content">
+		<div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-4">
+						<img class="img-thumbnail cover" src="" alt="Book Cover" style="max-height:200px;">
+					</div>
+					<div class="col-8">
+						<h1 class="title"></h1>
+						<h2 class="author"></h2>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<p class="synposis"></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+  </div>
+</div>
+	
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.1/tabletop.min.js'></script>
+<link rel="stylesheet" href="css/custom.css"/>
+<script type='text/javascript'>
+
+	// Renders the table and wires up the modal...
+	var showTable = function(data, tabletop) {
+		console.log(data);
+				
+		// Function to show book data in a modal
+		var showModal = function() {
+		
+			// Locate the parent row of the caller and pull the book data from it.
+			var book = $(this).parent().data("book");
+			
+			var m = $("#bookInfo");
+			
+			m.find(".title").text(book.title);
+			m.find(".author").text(book.author);
+			m.find(".synposis").text(book.synposis);
+			m.find(".cover").attr("src","");
+			
+			if((book["image url"] || "") != "")
+				m.find(".cover").attr("src",book["image url"])
+								.show();
+			else
+				m.find(".cover").hide();
+			
+			m.modal("show");
+		};
+		
+		// Is my data valid?
+		if(Array.isArray(data)) {
+		
+			// Get your table...
+			var t = document.getElementById("data");
+			
+			// Create and populate your table header...
+			var th = document.createElement("thead");
+			th.innerHTML = "<tr><th>Title</th><th>Author</th><th>Read</th></tr>";
+			
+			// Attach it to your table.
+			t.appendChild(th);
+			
+			// Create a body...
+			var tb = document.createElement("tbody");
+
+			for(var i = 0; i < data.length; i++) {
+				var book = data[i];
+				
+				// Create a row and corresponding cells...
+				var tr = document.createElement("tr");
+				var title = document.createElement("td");
+				var author = document.createElement("td");
+				var read = document.createElement("td");
+				
+				// Populate the cells...
+				title.innerHTML = book.title;
+				author.innerHTML = book.author;
+				read.innerHTML = book["year that i read"];
+				
+				// Attach cells to row...
+				tr.appendChild(title);
+				tr.appendChild(author);
+				tr.appendChild(read);
+				
+				// Store book data in the row.
+				$(tr).data("book",data[i]);
+									
+				// This could be done a milltion different ways but...
+				// Attach the instance function to the click event of each cell.
+				$(title).click(showModal); 
+				$(author).click(showModal); 
+				$(read).click(showModal); 
+				
+				// Attach row to body...
+				tb.appendChild(tr);
+			}
+			
+			// Attach the body to the table...
+			t.appendChild(tb);
+
+		} else {
+			console.log("data is invalid");
+			// todo:: show an error...
+		}
+	}
+	
+	var showCards = function(data, tabletop) {
+
+		var t =  document.getElementById("tiles");
+
+		if(Array.isArray(data)) { 
+			
+			for(var i = 0; i < data.length; i++) {
+
+				var book = data[i];
+				
+				// create a row for the cards if there isnt one or 
+				// if there is already three cards in a row
+				if(i % 3 == 0) {
+					var row = document.createElement("div");
+					row.className = "row";
+					t.appendChild(row);
+				}
+
+				// create the card
+				var col = document.createElement("div");
+				var card = document.createElement("div");
+				var cardImg = document.createElement("img");
+				var cardTitle = document.createElement("h5");
+				var cardAuthor = document.createElement("h6");
+				var cardText = document.createElement("p");
+
+				// populate the card with the appropriate class formatting
+				col.className = "col-md-4";
+				card.className = "card";
+				cardImg.className = "card-img-top";
+				cardTitle.className = "card-title";
+				cardAuthor.className = "card-author";
+				cardText.className = "card-text";
+
+				// populate the card with data
+				cardTitle.innerHTML = book.title;
+				cardAuthor.innerHTML = book.author;
+				cardImg.src = book['image url'];
+				cardText.innerHTML = book.synposis;
+
+				// append shit to the row
+				var cardcol = row.appendChild(col);
+				cardcol.appendChild(card);
+				cardcol.appendChild(cardImg);
+				cardcol.appendChild(cardTitle);
+				cardcol.appendChild(cardAuthor);
+				cardcol.appendChild(cardText);
+
+				}
+
+			} else {
+			console.log("data is invalid");
+			// todo:: show an error...
+		}
+
+	}
+	
+	// Stuff you want to do after the page loads...
+	function init() {
+		var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1KPuG5z52VWvloXocAwOXJf3iT56sTLi-TRSANyvMZws/pubhtml';
+		
+		Tabletop.init({ key: publicSpreadsheetUrl,
+						// callback: showTable,
+						callback: showCards,
+						simpleSheet: true 
+		});
+	}
+
+	// Telling the browser to do the stuff after the page loads...
+	window.addEventListener('load', init); 
+
+	window.onload = function() {
+
+		// switch to list view on button click
+		var lv = document.getElementById("listView");
+		var tv = document.getElementById("tileView");
+
+		lv.onclick = function() {
+
+			var delTiles = document.getElementById('tiles');
+			delTiles.innerHTML = ''
+
+			var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1KPuG5z52VWvloXocAwOXJf3iT56sTLi-TRSANyvMZws/pubhtml';
+		
+			Tabletop.init({ key: publicSpreadsheetUrl,
+							callback: showTable,
+							simpleSheet: true 
+			});
+		}
+
+		tv.onclick = function() {
+			var delTable = document.getElementById("data");
+			delTable.innerHTML = ''
+
+			var publicSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1KPuG5z52VWvloXocAwOXJf3iT56sTLi-TRSANyvMZws/pubhtml';
+		
+			Tabletop.init({ key: publicSpreadsheetUrl,
+						callback: showCards,
+						simpleSheet: true 
+			})
+		}
+
+	}
+
+	// function showTable() {
+	//     // todo: make this function show the list view
+	//     alert('This should show the table');
+	// };
+
+	function showTile() {
+		// todo: make this function show the tile view
+		alert('This should show the tile view')
+	};
+</script>
