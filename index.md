@@ -13,6 +13,3 @@ I am a data scientist who likes to work on integrating ML within the problem spa
 Most of the stuff that happens here is related to hobbies and random stuff I do. 
 
 If you want my professional page find me on [google scholar](https://scholar.google.no/citations?user=OFBaoZEAAAAJ&hl=en).
-
-You can find [my CV here](https://github.com/mnky9800n/john-aiken---cv/blob/main/john_aiken___cv.pdf).
-
