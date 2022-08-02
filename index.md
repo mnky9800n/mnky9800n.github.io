@@ -8,7 +8,7 @@ order: 1
 
 <div>
 <div style="float: left; padding: 10px">
-<img src ="https://i.imgur.com/POQODZA.jpg" width="250">
+<img src ="/imgs/goomba.jpg" width="250">
 </div>
 <div>
 I am a research scientist who focuses on using python to do things that appear as science. His research background has focused on integrating ML within the problem spaces of seismology/geophysics, glaciology, and social science. These works include predicting fracture development in laboratory experiments, investigating instabilities on glaciers, image analysis of rock core samples to assess CO2 injection sites, detecting cracking events due to fluid motion, and predicting university student decision making. My passions include reading, movies (I should have finished film school), and databases. I also enjoy rock climbing and endeavor to do so poorly wherever I go.
