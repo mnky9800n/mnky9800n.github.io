@@ -13,3 +13,5 @@ I am a research scientist who likes to work on integrating ML within the problem
 Most of the stuff that happens here is related to hobbies and random stuff I do. 
 
 If you want my professional page find me on [google scholar](https://scholar.google.no/citations?user=OFBaoZEAAAAJ&hl=en).
+
+This page is eternally <img src="/imgs/under_construction.gif" width="250" />
