@@ -4,7 +4,7 @@ title: projects
 permalink: /projects/
 ---
 
-!img[SerpRateAI](https://put-down-the-fork.herokuapp.com/). 
+A not comprehensive list of projects that I am principally part of or perhaps even in charge of.
 
 | **Project**  | Description |
 | ------------- | ------------- |
