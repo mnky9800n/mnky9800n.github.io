@@ -11,10 +11,11 @@ order: 1
 <img src ="/imgs/goomba.jpg" width="250">
 </div>
 <div>
-I am a technomage who alters the reality around me through technology in the pursuit of the unknown mysteries of the universe. I work at <a href="https://expertanalytics.no">Expert Analytics</a> and the <a href="https://www.mn.uio.no/njord/english/">University of Oslo Njord Centre</a>. My research mostly focuses on applying some kind of computational science to some kind of computable data related to what I loosely define as geophysics. These works include predicting fracture development in laboratory experiments, investigating instabilities on glaciers, image analysis of rock core samples to assess CO2 injection sites, and detecting cracking events due to fluid motion.  I have previously worked on educational research topics such predicting university student decision making when they do things like watch lecture videos or change their major. My passions include reading, movies (I should have finished film school), and databases. Most of the stuff that happens here is related to hobbies and random stuff I do. If you want my professional page find me on <a href="https://scholar.google.no/citations?user=OFBaoZEAAAAJ&hl=en">[google scholar]</a>.
+I am a [technomage](https://babylon5.fandom.com/wiki/Techno-mage) who alters the reality around me through technology in the pursuit of the unknown mysteries of the universe. I work at <a href="https://expertanalytics.no">Expert Analytics</a> and the <a href="https://www.mn.uio.no/njord/english/">University of Oslo Njord Centre</a>. My research mostly focuses on applying some kind of computational science to some kind of computable data related to what I loosely define as geophysics. Lately, that research has included developing new AI methods and frameworks for ingesting geophysical data, and organizing sessions, workshops, hackathons, and conferences to begin to understand the connection between AI/ML and geophysical systems. I have previously worked on educational research topics such predicting university student decision making when they do things like watch lecture videos or change their major. My passions include reading science fiction novels, movies (I should have finished film school), and databases.  If you want my professional page find me on <a href="https://scholar.google.no/citations?user=OFBaoZEAAAAJ&hl=en">[google scholar]</a>.
 
 </div>
 </div>
 
+<br>
 
 This page is eternally <img src="/imgs/under_construction.gif" width="250" />
