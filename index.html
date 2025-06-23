@@ -342,7 +342,7 @@ fetch('https://api.github.com/users/mnky9800n/orgs')
       const card = document.createElement('div');
       card.className = 'org-card';
       card.innerHTML = `
-         <a href="${org.url}" target="_blank" rel="noopener">
+         <a href="https://github.com/${org.login}" target="_blank" rel="noopener">
           <img src="${org.avatar_url}" alt="${org.login} logo">
           <span>${org.login}</span>
         </a>
