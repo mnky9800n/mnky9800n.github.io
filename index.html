@@ -334,11 +334,33 @@ tomCard.innerHTML = `
 `;
 grid.appendChild(tomCard);
 
-// 2. Fetch and add GitHub orgs (up to 7 more to make 8 total)
+// 2. Add Windowfied card
+const windowfiedCard = document.createElement('div');
+windowfiedCard.className = 'org-card';
+windowfiedCard.innerHTML = `
+  <a href="https://windowfied.com" target="_blank" rel="noopener">
+    <img src="https://windowfied.com/assets/images/logo.png" alt="Windowfied logo" style="object-fit: cover; object-position: center top;">
+    <span>Windowfied</span>
+  </a>
+`;
+grid.appendChild(windowfiedCard);
+
+// 3. Add Book List card
+const bookListCard = document.createElement('div');
+bookListCard.className = 'org-card';
+bookListCard.innerHTML = `
+  <a href="https://mnky9800n.github.io/booklist/" target="_blank" rel="noopener">
+    <img src="booklist/img/jumbotron_header.gif" alt="Book List" style="object-fit: cover; object-position: center center;">
+    <span>Book List</span>
+  </a>
+`;
+grid.appendChild(bookListCard);
+
+// 4. Fetch and add GitHub orgs (up to 5 more to make 8 total)
 fetch('https://api.github.com/users/mnky9800n/orgs')
   .then(response => response.json())
   .then(orgs => {
-    orgs.slice(0, 7).forEach(org => { // 7 more to fill 8 cards (2 rows of 4)
+    orgs.slice(0, 5).forEach(org => { // 5 more to fill 8 cards (2 rows of 4)
       const card = document.createElement('div');
       card.className = 'org-card';
       card.innerHTML = `
