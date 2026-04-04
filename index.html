@@ -359,11 +359,44 @@ bookListCard.innerHTML = `
 `;
 grid.appendChild(bookListCard);
 
-// 4. Fetch and add GitHub orgs (up to 5 more to make 8 total)
+// 4. Add Zulip Zork card
+const zulipZorkCard = document.createElement('div');
+zulipZorkCard.className = 'org-card';
+zulipZorkCard.innerHTML = `
+  <a href="https://github.com/mnky9800n/zulip-zork" target="_blank" rel="noopener">
+    <img src="pictures/zulip-zork.jpg" alt="Zulip Zork" style="object-fit: cover; object-position: center center;">
+    <span>Zulip Zork</span>
+  </a>
+`;
+grid.appendChild(zulipZorkCard);
+
+// 5. Add Rainy City card
+const rainyCityCard = document.createElement('div');
+rainyCityCard.className = 'org-card';
+rainyCityCard.innerHTML = `
+  <a href="https://github.com/mnky9800n/rainy-city" target="_blank" rel="noopener">
+    <img src="pictures/rainy-city.jpg" alt="Rainy City" style="object-fit: cover; object-position: center center;">
+    <span>Rainy City</span>
+  </a>
+`;
+grid.appendChild(rainyCityCard);
+
+// 6. Add Streets of Rainy City card
+const streetsCard = document.createElement('div');
+streetsCard.className = 'org-card';
+streetsCard.innerHTML = `
+  <a href="https://github.com/mnky9800n/streets-of-rainy-city" target="_blank" rel="noopener">
+    <img src="pictures/streets-of-rainy-city.jpg" alt="Streets of Rainy City" style="object-fit: cover; object-position: center center;">
+    <span>Streets of Rainy City</span>
+  </a>
+`;
+grid.appendChild(streetsCard);
+
+// 7. Fetch and add GitHub orgs (up to 2 more to make 8 total)
 fetch('https://api.github.com/users/mnky9800n/orgs')
   .then(response => response.json())
   .then(orgs => {
-    orgs.slice(0, 5).forEach(org => { // 5 more to fill 8 cards (2 rows of 4)
+    orgs.slice(0, 2).forEach(org => { // 2 more to fill 8 cards (2 rows of 4)
       const card = document.createElement('div');
       card.className = 'org-card';
       card.innerHTML = `
