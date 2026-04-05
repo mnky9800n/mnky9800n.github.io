@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 YOU BEEN HAXXORZ 🚨</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier Prime', monospace;
+            overflow: hidden;
+            position: relative;
+            height: 100vh;
+        }
+        
+        /* Matrix falling code background */
+        #matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        /* Flashing warning lights */
+        .warning-light {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            animation: flashRed 0.5s infinite alternate;
+            z-index: 10;
+        }
+        
+        .warning-light.top-left { top: 10px; left: 10px; }
+        .warning-light.top-right { top: 10px; right: 10px; }
+        .warning-light.bottom-left { bottom: 10px; left: 10px; }
+        .warning-light.bottom-right { bottom: 10px; right: 10px; }
+        
+        @keyframes flashRed {
+            0% { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
+            100% { background: #800000; box-shadow: 0 0 5px #800000; }
+        }
+        
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Title */
+        .title {
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: bold;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000;
+            animation: glitch 1s infinite;
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+        }
+        
+        @keyframes glitch {
+            0% { transform: translateX(0); }
+            10% { transform: translateX(-2px); }
+            20% { transform: translateX(2px); }
+            30% { transform: translateX(-1px); }
+            40% { transform: translateX(1px); }
+            50% { transform: translateX(0); }
+            100% { transform: translateX(0); }
+        }
+        
+        /* Subtitle */
+        .subtitle {
+            font-size: clamp(1rem, 4vw, 2rem);
+            color: #00ff00;
+            margin-bottom: 40px;
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Bouncing API key boxes */
+        .api-box {
+            position: fixed;
+            background: rgba(255, 0, 0, 0.8);
+            border: 2px solid #ff0000;
+            padding: 10px;
+            font-size: clamp(0.6rem, 2vw, 0.8rem);
+            color: #fff;
+            font-weight: bold;
+            border-radius: 5px;
+            animation: bounce 3s infinite linear;
+            z-index: 6;
+            pointer-events: none;
+            box-shadow: 0 0 10px #ff0000;
+        }
+        
+        .api-box:nth-child(1) { animation-delay: 0s; }
+        .api-box:nth-child(2) { animation-delay: 1s; }
+        .api-box:nth-child(3) { animation-delay: 2s; }
+        
+        @keyframes bounce {
+            0% {
+                left: -200px;
+                top: 20%;
+                transform: rotate(0deg);
+            }
+            25% {
+                left: 80%;
+                top: 60%;
+                transform: rotate(90deg);
+            }
+            50% {
+                left: 120%;
+                top: 30%;
+                transform: rotate(180deg);
+            }
+            75% {
+                left: 10%;
+                top: 70%;
+                transform: rotate(270deg);
+            }
+            100% {
+                left: -200px;
+                top: 20%;
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Big click button */
+        .big-button {
+            background: linear-gradient(45deg, #ff0000, #ff6600);
+            border: 5px solid #ffff00;
+            color: #fff;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            font-weight: bold;
+            padding: 20px 40px;
+            border-radius: 20px;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+            text-shadow: 2px 2px 4px #000;
+            box-shadow: 0 0 30px #ff0000;
+            font-family: 'Courier Prime', monospace;
+            letter-spacing: 2px;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .big-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 50px #ff0000;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Rick roll video container */
+        .video-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .video-container iframe {
+            width: 90vw;
+            height: 50vh;
+            max-width: 800px;
+            max-height: 450px;
+            border: 3px solid #ff0000;
+            border-radius: 10px;
+        }
+        
+        .close-video {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff0000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier Prime', monospace;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .warning-light {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .api-box {
+                font-size: 0.7rem;
+                padding: 8px;
+            }
+            
+            .big-button {
+                padding: 15px 25px;
+                margin-top: 20px;
+            }
+            
+            .video-container iframe {
+                height: 40vh;
+            }
+        }
+        
+        /* Additional retro effects */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 2px,
+                rgba(0, 255, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix background canvas -->
+    <canvas id="matrix-bg"></canvas>
+    
+    <!-- Warning lights -->
+    <div class="warning-light top-left"></div>
+    <div class="warning-light top-right"></div>
+    <div class="warning-light bottom-left"></div>
+    <div class="warning-light bottom-right"></div>
+    
+    <!-- Bouncing API key boxes -->
+    <div class="api-box">IS THIS YOUR API KEY?<br>sk-proj-abc123XYZ789...</div>
+    <div class="api-box">IS THIS YOUR API KEY?<br>pk_test_4242424242...</div>
+    <div class="api-box">IS THIS YOUR API KEY?<br>AIzaSyD_9tNj8khGFE7...</div>
+    
+    <!-- Main content -->
+    <div class="container">
+        <h1 class="title">🚨 YOU BEEN HAXXORZ 🚨</h1>
+        <p class="subtitle">YOUR SYSTEM HAS BEEN COMPROMISED</p>
+        <p style="color: #ff6600; font-size: clamp(0.8rem, 3vw, 1.2rem); margin-bottom: 20px;">
+            ALL YOUR BASE ARE BELONG TO US
+        </p>
+        <button class="big-button" onclick="showRickRoll()">CLICK ME!</button>
+    </div>
+    
+    <!-- Rick roll video container -->
+    <div class="video-container" id="videoContainer">
+        <button class="close-video" onclick="hideRickRoll()">✖ CLOSE</button>
+        <iframe id="rickrollVideo" 
+                src="" 
+                frameborder="0" 
+                allow="autoplay; encrypted-media" 
+                allowfullscreen>
+        </iframe>
+    </div>
+    
+    <!-- Scanlines effect -->
+    <div class="scanlines"></div>
+    
+    <script>
+        // Matrix falling code effect
+        const canvas = document.getElementById('matrix-bg');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        const matrix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%+-/~{[|`]}";
+        const matrixArray = matrix.split("");
+        
+        const fontSize = 10;
+        const columns = canvas.width / fontSize;
+        
+        const drops = [];
+        for(let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+        
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#00ff00';
+            ctx.font = fontSize + 'px Courier Prime';
+            
+            for(let i = 0; i < drops.length; i++) {
+                const text = matrixArray[Math.floor(Math.random() * matrixArray.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        
+        setInterval(drawMatrix, 35);
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Rick roll functions
+        function showRickRoll() {
+            const videoContainer = document.getElementById('videoContainer');
+            const rickrollVideo = document.getElementById('rickrollVideo');
+            
+            // Set the Rick Roll video URL with autoplay
+            rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0';
+            
+            videoContainer.style.display = 'flex';
+            
+            // Play some alert sounds (if browser allows)
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch(e) {
+                console.log("Audio not supported");
+            }
+        }
+        
+        function hideRickRoll() {
+            const videoContainer = document.getElementById('videoContainer');
+            const rickrollVideo = document.getElementById('rickrollVideo');
+            
+            videoContainer.style.display = 'none';
+            rickrollVideo.src = ''; // Stop the video
+        }
+        
+        // Random console messages for extra effect
+        console.log("🚨 SYSTEM COMPROMISED 🚨");
+        console.log("All your API keys belong to us now!");
+        console.log("sk-proj-" + Math.random().toString(36).substring(2, 15));
+        console.log("Access Level: HAXXORZ");
+        
+        // Prevent right-click for extra Web 1.0 vibes
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            alert('Nice try! 😈');
+        });
+        
+        // Konami code easter egg
+        let konamiCode = [];
+        const correctCode = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65]; // Up Up Down Down Left Right Left Right B A
+        
+        document.addEventListener('keydown', function(e) {
+            konamiCode.push(e.keyCode);
+            if (konamiCode.length > correctCode.length) {
+                konamiCode.shift();
+            }
+            if (konamiCode.join(',') === correctCode.join(',')) {
+                alert('🎮 KONAMI CODE ACTIVATED! You are now a certified haxxor! 💀');
+                document.body.style.filter = 'hue-rotate(180deg)';
+            }
+        });
+    </script>
+</body>
+</html>
