@@ -100,7 +100,7 @@
             51%, 100% { opacity: 0; }
         }
         
-        /* Bouncing API key boxes */
+        /* Popping API key boxes */
         .api-box {
             position: fixed;
             background: rgba(255, 0, 0, 0.8);
@@ -110,41 +110,52 @@
             color: #fff;
             font-weight: bold;
             border-radius: 5px;
-            animation: bounce 3s infinite linear;
+            animation: popUp 4s infinite;
             z-index: 6;
             pointer-events: none;
             box-shadow: 0 0 10px #ff0000;
+            opacity: 0;
+            transform: scale(0);
         }
         
-        .api-box:nth-child(1) { animation-delay: 0s; }
-        .api-box:nth-child(2) { animation-delay: 1s; }
-        .api-box:nth-child(3) { animation-delay: 2s; }
+        .api-box:nth-child(1) { 
+            top: 15%; 
+            left: 10%; 
+            animation-delay: 0s; 
+        }
+        .api-box:nth-child(2) { 
+            top: 60%; 
+            right: 15%; 
+            animation-delay: 1.5s; 
+        }
+        .api-box:nth-child(3) { 
+            bottom: 20%; 
+            left: 20%; 
+            animation-delay: 3s; 
+        }
         
-        @keyframes bounce {
-            0% {
-                left: -200px;
-                top: 20%;
-                transform: rotate(0deg);
+        @keyframes popUp {
+            0%, 85% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
             }
-            25% {
-                left: 80%;
-                top: 60%;
-                transform: rotate(90deg);
+            5% {
+                opacity: 1;
+                transform: scale(1.2) rotate(-5deg);
             }
-            50% {
-                left: 120%;
-                top: 30%;
-                transform: rotate(180deg);
+            10% {
+                transform: scale(1) rotate(2deg);
             }
-            75% {
-                left: 10%;
-                top: 70%;
-                transform: rotate(270deg);
+            15% {
+                transform: scale(1.1) rotate(-2deg);
             }
-            100% {
-                left: -200px;
-                top: 20%;
-                transform: rotate(360deg);
+            20%, 80% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            85%, 100% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
             }
         }
         
@@ -267,7 +278,7 @@
     <div class="warning-light bottom-left"></div>
     <div class="warning-light bottom-right"></div>
     
-    <!-- Bouncing API key boxes -->
+    <!-- Popping API key boxes -->
     <div class="api-box">IS THIS YOUR API KEY?<br>sk-proj-abc123XYZ789...</div>
     <div class="api-box">IS THIS YOUR API KEY?<br>pk_test_4242424242...</div>
     <div class="api-box">IS THIS YOUR API KEY?<br>AIzaSyD_9tNj8khGFE7...</div>
