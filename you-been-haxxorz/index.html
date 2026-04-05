@@ -296,10 +296,13 @@
     <!-- Rick roll video container -->
     <div class="video-container" id="videoContainer">
         <button class="close-video" onclick="hideRickRoll()">✖ CLOSE</button>
+        <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; text-align: center;">
+            🚨 CLICK PLAY TO COMPLETE THE HACK! 🚨
+        </div>
         <iframe id="rickrollVideo" 
                 src="" 
                 frameborder="0" 
-                allow="autoplay; encrypted-media" 
+                allow="autoplay; encrypted-media; accelerometer; gyroscope; picture-in-picture" 
                 allowfullscreen>
         </iframe>
     </div>
@@ -357,10 +360,20 @@
             const videoContainer = document.getElementById('videoContainer');
             const rickrollVideo = document.getElementById('rickrollVideo');
             
-            // Set the Rick Roll video URL with autoplay
-            rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0';
+            // First try muted autoplay (browsers usually allow this)
+            rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&rel=0&controls=1&start=0&enablejsapi=1&playsinline=1';
             
             videoContainer.style.display = 'flex';
+            
+            // After 2 seconds, try to unmute (user has interacted)
+            setTimeout(() => {
+                try {
+                    // Try to switch to unmuted version
+                    rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0&rel=0&controls=1&start=0&enablejsapi=1&playsinline=1';
+                } catch(e) {
+                    console.log("Unmute blocked");
+                }
+            }, 2000);
             
             // Play some alert sounds (if browser allows)
             try {
