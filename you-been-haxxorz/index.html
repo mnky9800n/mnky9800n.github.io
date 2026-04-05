@@ -33,25 +33,7 @@
             z-index: 1;
         }
         
-        /* Flashing warning lights */
-        .warning-light {
-            position: fixed;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            animation: flashRed 0.5s infinite alternate;
-            z-index: 10;
-        }
-        
-        .warning-light.top-left { top: 10px; left: 10px; }
-        .warning-light.top-right { top: 10px; right: 10px; }
-        .warning-light.bottom-left { bottom: 10px; left: 10px; }
-        .warning-light.bottom-right { bottom: 10px; right: 10px; }
-        
-        @keyframes flashRed {
-            0% { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-            100% { background: #800000; box-shadow: 0 0 5px #800000; }
-        }
+        /* Warning lights removed */
         
         /* Main container */
         .container {
@@ -229,11 +211,6 @@
         
         /* Mobile responsive adjustments */
         @media (max-width: 768px) {
-            .warning-light {
-                width: 30px;
-                height: 30px;
-            }
-            
             .api-box {
                 font-size: 0.7rem;
                 padding: 8px;
@@ -272,11 +249,7 @@
     <!-- Matrix background canvas -->
     <canvas id="matrix-bg"></canvas>
     
-    <!-- Warning lights -->
-    <div class="warning-light top-left"></div>
-    <div class="warning-light top-right"></div>
-    <div class="warning-light bottom-left"></div>
-    <div class="warning-light bottom-right"></div>
+    <!-- Warning lights removed -->
     
     <!-- Popping API key boxes -->
     <div class="api-box">IS THIS YOUR API KEY?<br>sk-proj-abc123XYZ789...</div>
@@ -296,9 +269,6 @@
     <!-- Rick roll video container -->
     <div class="video-container" id="videoContainer">
         <button class="close-video" onclick="hideRickRoll()">✖ CLOSE</button>
-        <div style="color: #ff0000; font-weight: bold; margin-bottom: 10px; text-align: center;">
-            🚨 CLICK PLAY TO COMPLETE THE HACK! 🚨
-        </div>
         <iframe id="rickrollVideo" 
                 src="" 
                 frameborder="0" 
@@ -360,22 +330,14 @@
             const videoContainer = document.getElementById('videoContainer');
             const rickrollVideo = document.getElementById('rickrollVideo');
             
-            // First try muted autoplay (browsers usually allow this)
-            rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&rel=0&controls=1&start=0&enablejsapi=1&playsinline=1';
-            
+            // Show the container first
             videoContainer.style.display = 'flex';
             
-            // After 2 seconds, try to unmute (user has interacted)
-            setTimeout(() => {
-                try {
-                    // Try to switch to unmuted version
-                    rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0&rel=0&controls=1&start=0&enablejsapi=1&playsinline=1';
-                } catch(e) {
-                    console.log("Unmute blocked");
-                }
-            }, 2000);
+            // Set up the video with autoplay only after user interaction
+            // This ensures autoplay works since user just clicked
+            rickrollVideo.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0&controls=1&enablejsapi=1';
             
-            // Play some alert sounds (if browser allows)
+            // Play alert sound effect
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioContext.createOscillator();
