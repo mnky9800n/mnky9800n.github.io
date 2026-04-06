@@ -44,42 +44,16 @@
             user-select: none;
         }
 
-        #earth-canvas {
-            display: block;
-            cursor: grab;
-        }
-
-        #earth-canvas:active {
-            cursor: grabbing;
-        }
-
-        #earth-surface {
+        #earth {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 10;
             cursor: grab;
         }
 
-        #earth-surface:active {
+        #earth:active {
             cursor: grabbing;
-        }
-
-        /* earthjs styling */
-        .countries path {
-            fill: rgba(117, 87, 57, 0.6);
-            stroke: rgba(80, 64, 39, 0.8);
-            stroke-linejoin: round;
-            stroke-width: 1.5;
-            opacity: 1;
-        }
-        
-        .graticule path {
-            fill: none;
-            opacity: 0.2;
-            stroke: black;
-            stroke-width: 0.5;
         }
 
         #debug {
@@ -91,50 +65,24 @@
             padding: 5px;
             font-size: 10px;
             z-index: 1000;
+            max-width: 300px;
         }
     </style>
+    
+    <!-- earthjs dependencies -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js"></script>
 </head>
 <body>
     <h1 class="main-title">earth-lab.ai</h1>
     <div class="contact">contact@earth-lab.ai</div>
     
-    <!-- earthjs surface with geography -->
-    <svg id="earth-surface"></svg>
+    <div id="earth"></div>
     
     <div id="debug">Loading...</div>
     
-    <!-- Load D3 and earthjs -->
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js"></script>
-    
-    <!-- Load Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" 
-            onload="console.log('Primary Three.js CDN loaded')" 
-            onerror="loadBackupThreeJS()"></script>
-    <script>
-        // Backup Three.js loader
-        function loadBackupThreeJS() {
-            debug('Primary CDN failed, trying backup...');
-            var script = document.createElement('script');
-            script.src = 'https://threejs.org/build/three.min.js';
-            script.onload = function() {
-                debug('Backup CDN loaded successfully!');
-                setTimeout(function() {
-                    if (typeof THREE !== 'undefined') {
-                        debug('THREE available after backup load');
-                        initThreeJS();
-                    } else {
-                        debug('THREE still undefined after backup');
-                    }
-                }, 100);
-            };
-            script.onerror = function() {
-                debug('Backup CDN also failed');
-            };
-            document.head.appendChild(script);
-        }
-    </script>
     <script>
         var debugEl = document.getElementById('debug');
         var debugLines = [];
@@ -142,276 +90,49 @@
         function debug(msg) {
             console.log(msg);
             debugLines.push(msg);
-            if (debugLines.length > 5) debugLines.shift(); // Keep last 5 lines
+            if (debugLines.length > 6) debugLines.shift();
             debugEl.innerHTML = debugLines.join('<br>');
         }
         
-        debug('User agent: ' + navigator.userAgent.substring(0, 60) + '...');
-        debug('D3 loaded: ' + (typeof d3 !== 'undefined'));
-        debug('topojson loaded: ' + (typeof topojson !== 'undefined'));
-        debug('earthjs loaded: ' + (typeof earthjs !== 'undefined'));
-        debug('THREE loaded: ' + (typeof THREE !== 'undefined'));
+        debug('Loading libraries...');
+        debug('D3: ' + (typeof d3 !== 'undefined'));
+        debug('topojson: ' + (typeof topojson !== 'undefined'));
+        debug('THREE: ' + (typeof THREE !== 'undefined'));
+        debug('earthjs: ' + (typeof earthjs !== 'undefined'));
         
-        // Wait a bit for all scripts to load, then check again
         setTimeout(function() {
-            debug('Libraries after delay:');
-            debug('- earthjs: ' + (typeof earthjs !== 'undefined'));
-            debug('- THREE: ' + (typeof THREE !== 'undefined'));
-            
-            if (typeof THREE === 'undefined') {
-                debug('ERROR: THREE.js failed to load from all CDNs');
+            if (typeof earthjs !== 'undefined' && typeof THREE !== 'undefined') {
+                debug('Creating realistic Earth globe...');
+                createRealisticEarth();
             } else {
-                debug('Starting Three.js geological layers...');
-                initThreeJS();
-                
-                // Add earthjs surface if available
-                if (typeof earthjs !== 'undefined') {
-                    debug('Adding earthjs geography surface...');
-                    initEarthJS();
-                } else {
-                    debug('earthjs not available, using geological layers only');
-                }
+                debug('ERROR: Libraries not loaded');
+                debug('earthjs: ' + (typeof earthjs !== 'undefined'));
+                debug('THREE: ' + (typeof THREE !== 'undefined'));
             }
         }, 1000);
         
-        var scene, camera, renderer, earthGroup;
-        var layers = [];
-        var isExploded = false;
-        var isDragging = false;
-        var startX = 0, startY = 0;
-        var rotationX = 0, rotationY = 0;
-        
-        function initThreeJS() {
+        function createRealisticEarth() {
             try {
-                // Scene
-                scene = new THREE.Scene();
-                
-                // Camera
-                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                camera.position.z = 4;
-                
-                // Renderer
-                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setClearColor(0xffffff, 0);
-                renderer.domElement.id = 'earth-canvas';
-                document.body.appendChild(renderer.domElement);
-                
-                // Earth group
-                earthGroup = new THREE.Group();
-                scene.add(earthGroup);
-                
-                // Create geological layers
-                createLayers();
-                
-                // Lighting
-                var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-                scene.add(ambientLight);
-                
-                var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(-1, 1, 1);
-                scene.add(directionalLight);
-                
-                // Events
-                setupEvents();
-                
-                // Start animation
-                animate();
-                
-                debug('Three.js initialized successfully!');
-                
-                setTimeout(function() {
-                    debugEl.style.display = 'none';
-                }, 2000);
-                
-            } catch (error) {
-                debug('Three.js error: ' + error.message);
-            }
-        }
-        
-        function createLayers() {
-            var layerData = [
-                { name: 'inner_core', radius: 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
-                { name: 'outer_core', radius: 0.35, color: 0xffcc00, opacity: 0.6, explodedDistance: 0.8 },
-                { name: 'mantle', radius: 0.85, color: 0xff4500, opacity: 0.5, explodedDistance: 1.5 },
-                { name: 'crust', radius: 1.0, color: 0x8b7355, opacity: 0.4, explodedDistance: 2.2 }
-            ];
-            
-            for (var i = 0; i < layerData.length; i++) {
-                var layerInfo = layerData[i];
-                
-                var geometry = new THREE.SphereGeometry(layerInfo.radius, 32, 32);
-                var material = new THREE.MeshLambertMaterial({
-                    color: layerInfo.color,
-                    transparent: true,
-                    opacity: layerInfo.opacity,
-                    side: THREE.DoubleSide
-                });
-                
-                var sphere = new THREE.Mesh(geometry, material);
-                sphere.name = layerInfo.name;
-                sphere.userData = {
-                    explodedDistance: layerInfo.explodedDistance,
-                    originalPosition: new THREE.Vector3(0, 0, 0)
-                };
-                
-                layers.push(sphere);
-                earthGroup.add(sphere);
-            }
-        }
-        
-        function setupEvents() {
-            var canvas = renderer.domElement;
-            
-            // Events on Three.js canvas
-            canvas.addEventListener('mousedown', onPointerStart);
-            canvas.addEventListener('mousemove', onPointerMove);
-            canvas.addEventListener('mouseup', onPointerEnd);
-            canvas.addEventListener('touchstart', onPointerStart);
-            canvas.addEventListener('touchmove', onPointerMove);
-            canvas.addEventListener('touchend', onPointerEnd);
-            
-            window.addEventListener('resize', onResize);
-        }
-        
-        // Add events to earthjs surface when it's created
-        function addEarthJSEvents() {
-            var earthSurface = document.getElementById('earth-surface');
-            if (earthSurface) {
-                earthSurface.addEventListener('mousedown', onPointerStart);
-                earthSurface.addEventListener('mousemove', onPointerMove);
-                earthSurface.addEventListener('mouseup', onPointerEnd);
-                earthSurface.addEventListener('touchstart', onPointerStart);
-                earthSurface.addEventListener('touchmove', onPointerMove);
-                earthSurface.addEventListener('touchend', onPointerEnd);
-            }
-        }
-        
-        function onPointerStart(event) {
-            isDragging = false;
-            var clientX = event.clientX || (event.touches && event.touches[0].clientX);
-            var clientY = event.clientY || (event.touches && event.touches[0].clientY);
-            startX = clientX;
-            startY = clientY;
-        }
-        
-        function onPointerMove(event) {
-            var clientX = event.clientX || (event.touches && event.touches[0].clientX);
-            var clientY = event.clientY || (event.touches && event.touches[0].clientY);
-            
-            if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) {
-                isDragging = true;
-                event.preventDefault();
-                
-                var deltaX = clientX - startX;
-                var deltaY = clientY - startY;
-                
-                rotationY += deltaX * 0.01;
-                rotationX += deltaY * 0.01;
-                rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
-                
-                startX = clientX;
-                startY = clientY;
-            }
-        }
-        
-        function onPointerEnd(event) {
-            if (!isDragging) {
-                toggleExploded();
-            }
-        }
-        
-        function toggleExploded() {
-            isExploded = !isExploded;
-            
-            for (var i = 0; i < layers.length; i++) {
-                var layer = layers[i];
-                var targetZ = isExploded ? layer.userData.explodedDistance : 0;
-                animateLayer(layer, targetZ);
-            }
-        }
-        
-        function animateLayer(layer, targetZ) {
-            var startZ = layer.position.z;
-            var startTime = Date.now();
-            var duration = 1000;
-            
-            function animate() {
-                var elapsed = Date.now() - startTime;
-                var progress = Math.min(elapsed / duration, 1);
-                var eased = 1 - Math.pow(1 - progress, 3);
-                
-                layer.position.z = startZ + (targetZ - startZ) * eased;
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                }
-            }
-            animate();
-        }
-        
-        function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            
-            // Resize earthjs globe if it exists
-            if (earthjsGlobe) {
                 var minDim = Math.min(window.innerWidth, window.innerHeight);
-                var globeSize = minDim * 0.4;
-                earthjsGlobe.width(globeSize).height(globeSize).refresh();
-            }
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Auto-rotation
-            if (!isDragging) {
-                rotationY += 0.005;
-            }
-            
-            earthGroup.rotation.x = rotationX;
-            earthGroup.rotation.y = rotationY;
-            
-            // Sync earthjs rotation if available
-            if (earthjsGlobe && earthjsGlobe.projection) {
-                var degX = (rotationX * 180 / Math.PI);
-                var degY = (rotationY * 180 / Math.PI);
-                earthjsGlobe.projection().rotate([degY * 50, -degX * 50, 0]);
-                earthjsGlobe.refresh();
-            }
-            
-            renderer.render(scene, camera);
-        }
-        
-        // Initialize earthjs geography surface
-        var earthjsGlobe;
-        
-        function initEarthJS() {
-            try {
-                // Calculate globe size to match Three.js layers
-                var minDim = Math.min(window.innerWidth, window.innerHeight);
-                var globeSize = minDim * 0.4;
+                var globeSize = Math.min(600, minDim * 0.7);
                 
-                // Use earthjs README example pattern
-                earthjsGlobe = earthjs({
+                // Create realistic Earth globe using earthjs with Three.js renderer
+                var earth = earthjs({
                     width: globeSize,
                     height: globeSize
                 })
-                .register(earthjs.plugins.graticuleSvg())
-                .register(earthjs.plugins.autorotatePlugin(10))
-                .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
-                .svg('#earth-surface');
+                .register(earthjs.plugins.threejsPlugin())
+                .register(earthjs.plugins.sphereThreejs())
+                .register(earthjs.plugins.worldThreejs('https://unpkg.com/world-atlas/world/110m.json'))
+                .register(earthjs.plugins.autorotatePlugin(20))
+                .register(earthjs.plugins.inertiaThreejs())
+                .threejs('#earth');
                 
-                earthjsGlobe.ready(function() {
-                    earthjsGlobe.create();
-                    debug('earthjs geography surface created!');
+                earth.ready(function() {
+                    debug('Creating realistic Earth...');
+                    earth.create();
+                    debug('Realistic Earth globe created!');
                     
-                    // Add event listeners to earthjs surface
-                    addEarthJSEvents();
-                    
-                    // Hide debug after both systems are working
                     setTimeout(function() {
                         debugEl.style.display = 'none';
                     }, 3000);
@@ -421,6 +142,12 @@
                 debug('earthjs error: ' + error.message);
             }
         }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            // earthjs handles this automatically
+        });
+        
     </script>
 </body>
 </html>
