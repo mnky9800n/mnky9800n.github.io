@@ -55,43 +55,48 @@ body {
     z-index: 1;
 }
 
-#earth-canvas {
-    display: block;
-    cursor: grab;
-}
-
-#earth-canvas:active {
-    cursor: grabbing;
-}
-
-#earth-surface-container {
+#earth {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
+    cursor: grab;
+}
+
+#earth:active {
+    cursor: grabbing;
+}
+
+#geological-layers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
     pointer-events: none;
 }
 
-/* earthjs styling */
-#earth-surface-container .countries path {
-    fill: rgba(139, 115, 85, 0.3);
-    stroke: rgba(80, 64, 39, 0.5);
-    stroke-linejoin: round;
-    stroke-width: 0.5;
+#geological-canvas {
+    display: block;
+    pointer-events: none;
 }
 
-#earth-surface-container .graticule path {
+/* earthjs styling from README example */
+.countries path {
+    fill: rgba(117, 87, 57, 0.6);
+    stroke: rgba(80, 64, 39, 0.8);
+    stroke-linejoin: round;
+    stroke-width: 1;
+    opacity: 1;
+}
+
+.graticule path {
     fill: none;
     opacity: 0.2;
-    stroke: #333;
-    stroke-width: 0.3;
-}
-
-#earth-surface-container .sphere {
-    fill: none;
-    stroke: rgba(135, 206, 235, 0.3);
-    stroke-width: 1;
+    stroke: black;
+    stroke-width: 0.5;
 }
 
 /* Mobile adjustments */

@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earth-lab.ai</title>
+    <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
+    <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
+    <script type='text/javascript' src='https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h1 class="main-title">earth-lab.ai</h1>
-        <div class="earth-container" id="earth-container">
-            <div id="earth-surface-container"></div>
+        <div class="earth-container">
+            <svg id="earth"></svg>
+            <div id="geological-layers"></div>
         </div>
         <div class="contact">contact@earth-lab.ai</div>
     </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <script src="https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

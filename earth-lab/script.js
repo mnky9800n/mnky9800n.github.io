@@ -1,85 +1,98 @@
-// Earth Lab 3D Interactive Earth
-let scene, camera, renderer, earthGroup;
-let isUserInteracting = false;
-let autoRotationEnabled = true;
-let autoRotationTimeout;
+// Earth Lab - earthjs + Three.js geological layers
+let earthjsGlobe;
+let threeScene, threeCamera, threeRenderer, geologicalGroup;
+let geologicalLayers = [];
 
-// Mouse/touch interaction variables
-let mouseX = 0, mouseY = 0;
-let targetRotationX = 0, targetRotationY = 0;
-let rotationX = 0, rotationY = 0;
-
-// Click vs drag detection
-let startX = 0, startY = 0;
-let isDragging = false;
-let dragThreshold = 5; // pixels
-
-// Exploded view state
+// Interaction state
 let isExploded = false;
-let layers = [];
+let isDragging = false;
+let dragThreshold = 5;
+let startX = 0, startY = 0;
 
-// Initialize the scene
+// Initialize everything
 function init() {
-    // Create container
-    const container = document.getElementById('earth-container');
+    // Initialize earthjs globe using README example
+    initEarthJS();
     
-    // Scene setup
-    scene = new THREE.Scene();
+    // Add Three.js geological layers
+    initGeologicalLayers();
     
-    // Camera setup - responsive FOV
-    const aspect = window.innerWidth / window.innerHeight;
-    camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-    camera.position.z = 4;
-    
-    // Renderer setup
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true,
-        canvas: document.createElement('canvas')
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0xffffff, 0);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    
-    // Add canvas to container
-    renderer.domElement.id = 'earth-canvas';
-    container.appendChild(renderer.domElement);
-    
-    // Create Earth group to hold all layers
-    earthGroup = new THREE.Group();
-    scene.add(earthGroup);
-    
-    // Create geological layers
-    createEarthLayers();
-    
-    // Add lighting
-    setupLighting();
-    
-    // Event listeners
+    // Setup interactions
     setupEventListeners();
     
-    // Add earthjs surface layer
-    setTimeout(addEarthJSSurface, 100);
-    
-    // Start animation loop
+    // Start render loop
     animate();
 }
 
-function createEarthLayers() {
-    // Earth radius scale
-    const baseRadius = 1;
+function initEarthJS() {
+    // Calculate responsive globe size
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+    const globeSize = minDim * 0.6;
     
-    // Geological layer data (radius ratios)
+    // Create earthjs globe using the README example pattern
+    earthjsGlobe = earthjs({
+        width: globeSize,
+        height: globeSize
+    })
+    .register(earthjs.plugins.graticuleSvg())
+    .register(earthjs.plugins.autorotatePlugin(20))
+    .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
+    .svg('#earth');
+    
+    earthjsGlobe.ready(function() {
+        earthjsGlobe.create();
+    });
+}
+
+function initGeologicalLayers() {
+    const container = document.getElementById('geological-layers');
+    
+    // Three.js setup
+    threeScene = new THREE.Scene();
+    
+    const aspect = window.innerWidth / window.innerHeight;
+    threeCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+    threeCamera.position.z = 600;
+    
+    threeRenderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true
+    });
+    threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    threeRenderer.setClearColor(0xffffff, 0);
+    threeRenderer.domElement.id = 'geological-canvas';
+    container.appendChild(threeRenderer.domElement);
+    
+    // Geological layers group
+    geologicalGroup = new THREE.Group();
+    threeScene.add(geologicalGroup);
+    
+    // Create geological layers
+    createGeologicalLayers();
+    
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    threeScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    directionalLight.position.set(-1, 1, 1);
+    threeScene.add(directionalLight);
+}
+
+function createGeologicalLayers() {
+    // Scale to match earthjs globe size
+    const minDim = Math.min(window.innerWidth, window.innerHeight);
+    const baseRadius = minDim * 0.15; // Match earthjs globe scale
+    
     const layerData = [
-        { name: 'inner_core', radius: 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
-        { name: 'outer_core', radius: 0.35, color: 0xffcc00, opacity: 0.6, explodedDistance: 0.8 },
-        { name: 'mantle', radius: 0.85, color: 0xff4500, opacity: 0.5, explodedDistance: 1.5 },
-        { name: 'crust', radius: 1.0, color: 0x8b7355, opacity: 0.4, explodedDistance: 2.2 }
+        { name: 'inner_core', radius: baseRadius * 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
+        { name: 'outer_core', radius: baseRadius * 0.35, color: 0xffcc00, opacity: 0.6, explodedDistance: baseRadius * 0.8 },
+        { name: 'mantle', radius: baseRadius * 0.85, color: 0xff4500, opacity: 0.5, explodedDistance: baseRadius * 1.5 },
+        { name: 'crust', radius: baseRadius * 1.0, color: 0x8b7355, opacity: 0.4, explodedDistance: baseRadius * 2.2 }
     ];
     
-    layerData.forEach((layerInfo, index) => {
-        const geometry = new THREE.SphereGeometry(baseRadius * layerInfo.radius, 32, 32);
+    layerData.forEach((layerInfo) => {
+        const geometry = new THREE.SphereGeometry(layerInfo.radius, 32, 32);
         const material = new THREE.MeshLambertMaterial({
             color: layerInfo.color,
             transparent: true,
@@ -92,140 +105,83 @@ function createEarthLayers() {
         sphere.userData.explodedDistance = layerInfo.explodedDistance;
         sphere.userData.originalPosition = new THREE.Vector3(0, 0, 0);
         
-        layers.push(sphere);
-        earthGroup.add(sphere);
+        geologicalLayers.push(sphere);
+        geologicalGroup.add(sphere);
     });
 }
 
-function setupLighting() {
-    // Ambient light for overall illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    // Directional light for depth
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(-1, 1, 1);
-    directionalLight.castShadow = true;
-    scene.add(directionalLight);
-}
-
 function setupEventListeners() {
-    const canvas = renderer.domElement;
+    const earthSvg = document.getElementById('earth');
     
     // Mouse events
-    canvas.addEventListener('mousedown', onPointerStart, false);
-    canvas.addEventListener('mousemove', onPointerMove, false);
-    canvas.addEventListener('mouseup', onPointerEnd, false);
-    canvas.addEventListener('mouseleave', onPointerEnd, false);
+    earthSvg.addEventListener('mousedown', onPointerStart, false);
+    earthSvg.addEventListener('mousemove', onPointerMove, false);
+    earthSvg.addEventListener('mouseup', onPointerEnd, false);
+    earthSvg.addEventListener('mouseleave', onPointerEnd, false);
     
     // Touch events
-    canvas.addEventListener('touchstart', onPointerStart, false);
-    canvas.addEventListener('touchmove', onPointerMove, false);
-    canvas.addEventListener('touchend', onPointerEnd, false);
+    earthSvg.addEventListener('touchstart', onPointerStart, false);
+    earthSvg.addEventListener('touchmove', onPointerMove, false);
+    earthSvg.addEventListener('touchend', onPointerEnd, false);
     
     // Window resize
     window.addEventListener('resize', onWindowResize, false);
     
     // Prevent context menu
-    canvas.addEventListener('contextmenu', function(e) {
+    earthSvg.addEventListener('contextmenu', function(e) {
         e.preventDefault();
     });
 }
 
 function onPointerStart(event) {
-    isUserInteracting = true;
-    autoRotationEnabled = false;
     isDragging = false;
     
     const clientX = event.clientX || (event.touches && event.touches[0].clientX);
     const clientY = event.clientY || (event.touches && event.touches[0].clientY);
     
-    mouseX = clientX;
-    mouseY = clientY;
     startX = clientX;
     startY = clientY;
-    
-    // Clear auto-rotation timeout
-    if (autoRotationTimeout) {
-        clearTimeout(autoRotationTimeout);
-    }
 }
 
 function onPointerMove(event) {
-    if (!isUserInteracting) return;
-    
     const clientX = event.clientX || (event.touches && event.touches[0].clientX);
     const clientY = event.clientY || (event.touches && event.touches[0].clientY);
     
-    // Check if this is a drag (moved more than threshold)
     const totalDeltaX = Math.abs(clientX - startX);
     const totalDeltaY = Math.abs(clientY - startY);
     
     if (totalDeltaX > dragThreshold || totalDeltaY > dragThreshold) {
         isDragging = true;
-        event.preventDefault();
-        
-        const deltaX = clientX - mouseX;
-        const deltaY = clientY - mouseY;
-        
-        // Update rotation based on mouse movement
-        targetRotationY += deltaX * 0.01;
-        targetRotationX += deltaY * 0.01;
-        
-        // Clamp vertical rotation
-        targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX));
-        
-        mouseX = clientX;
-        mouseY = clientY;
     }
 }
 
 function onPointerEnd(event) {
-    isUserInteracting = false;
-    
-    // Check if this was a click (not a drag)
     if (!isDragging) {
-        // Toggle exploded view
+        // Single tap/click - toggle exploded view
         toggleExplodedView();
     }
-    
-    // Resume auto-rotation after delay
-    autoRotationTimeout = setTimeout(() => {
-        autoRotationEnabled = true;
-    }, 2000);
-}
-
-function onWindowResize() {
-    const aspect = window.innerWidth / window.innerHeight;
-    camera.aspect = aspect;
-    camera.updateProjectionMatrix();
-    
-    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function toggleExplodedView() {
     isExploded = !isExploded;
     
-    layers.forEach((layer, index) => {
+    geologicalLayers.forEach((layer) => {
         const targetPosition = isExploded 
             ? new THREE.Vector3(0, 0, layer.userData.explodedDistance)
             : layer.userData.originalPosition.clone();
         
-        // Animate to target position
         animateLayerTo(layer, targetPosition);
     });
 }
 
 function animateLayerTo(layer, targetPosition) {
     const startPosition = layer.position.clone();
-    const duration = 1000; // 1 second
+    const duration = 1000;
     const startTime = Date.now();
     
     function animate() {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function (ease-out)
         const easedProgress = 1 - Math.pow(1 - progress, 3);
         
         layer.position.lerpVectors(startPosition, targetPosition, easedProgress);
@@ -238,74 +194,32 @@ function animateLayerTo(layer, targetPosition) {
     animate();
 }
 
+function onWindowResize() {
+    // Resize Three.js
+    const aspect = window.innerWidth / window.innerHeight;
+    threeCamera.aspect = aspect;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Resize earthjs
+    if (earthjsGlobe) {
+        const minDim = Math.min(window.innerWidth, window.innerHeight);
+        const globeSize = minDim * 0.6;
+        earthjsGlobe.width(globeSize).height(globeSize).refresh();
+    }
+}
+
 function animate() {
     requestAnimationFrame(animate);
     
-    // Smooth rotation interpolation
-    rotationX += (targetRotationX - rotationX) * 0.1;
-    rotationY += (targetRotationY - rotationY) * 0.1;
-    
-    // Auto-rotation when not interacting
-    if (autoRotationEnabled && !isUserInteracting) {
-        targetRotationY += 0.005; // Slow auto-rotation
-    }
-    
-    // Apply rotations to earth group
-    earthGroup.rotation.x = rotationX;
-    earthGroup.rotation.y = rotationY;
-    
-    renderer.render(scene, camera);
+    // Render Three.js geological layers
+    threeRenderer.render(threeScene, threeCamera);
 }
 
-// Start everything when page loads
+// Start when page loads
 window.addEventListener('load', init);
 
 // Handle orientation changes on mobile
 window.addEventListener('orientationchange', () => {
     setTimeout(onWindowResize, 100);
 });
-
-// Add earthjs surface layer
-function addEarthJSSurface() {
-    // Check if earthjs is available
-    if (typeof earthjs === 'undefined') {
-        console.log('earthjs not loaded, using geological layers only');
-        return;
-    }
-    
-    try {
-        // Calculate globe size to match Three.js sphere
-        const minDim = Math.min(window.innerWidth, window.innerHeight);
-        const globeSize = minDim * 0.5;
-        
-        // Create earthjs globe
-        const earthGlobe = earthjs({
-            width: globeSize,
-            height: globeSize
-        })
-        .register(earthjs.plugins.sphereSvg())
-        .register(earthjs.plugins.graticuleSvg()) 
-        .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
-        .svg('#earth-surface-container');
-        
-        // Initialize when ready
-        earthGlobe.ready(function() {
-            earthGlobe.create();
-            
-            // Sync rotation with Three.js
-            function syncRotation() {
-                if (earthGlobe.projection) {
-                    const degX = (rotationX * 180 / Math.PI);
-                    const degY = (rotationY * 180 / Math.PI);
-                    earthGlobe.projection().rotate([degY * 50, -degX * 50, 0]);
-                    earthGlobe.refresh();
-                }
-                requestAnimationFrame(syncRotation);
-            }
-            syncRotation();
-        });
-        
-    } catch (error) {
-        console.log('earthjs error:', error);
-    }
-}
