@@ -67,13 +67,18 @@
             z-index: 1000;
             max-width: 300px;
         }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
     
-    <!-- earthjs dependencies -->
+    <!-- Try different CDNs for Safari compatibility -->
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <script src="https://threejs.org/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js"></script>
 </head>
 <body>
     <h1 class="main-title">earth-lab.ai</h1>
@@ -100,16 +105,29 @@
         debug('THREE: ' + (typeof THREE !== 'undefined'));
         debug('earthjs: ' + (typeof earthjs !== 'undefined'));
         
+        // Wait longer for scripts to load on Safari
         setTimeout(function() {
+            debug('Checking again after 2s...');
+            debug('THREE: ' + (typeof THREE !== 'undefined'));
+            debug('earthjs: ' + (typeof earthjs !== 'undefined'));
+            
             if (typeof earthjs !== 'undefined' && typeof THREE !== 'undefined') {
-                debug('Creating realistic Earth globe...');
+                debug('✓ All libraries loaded!');
                 createRealisticEarth();
             } else {
-                debug('ERROR: Libraries not loaded');
-                debug('earthjs: ' + (typeof earthjs !== 'undefined'));
-                debug('THREE: ' + (typeof THREE !== 'undefined'));
+                debug('⚠ Some libraries still missing');
+                
+                // Try manual fallback loading
+                if (typeof THREE === 'undefined') {
+                    debug('Loading THREE.js fallback...');
+                    loadThreeJSFallback();
+                }
+                if (typeof earthjs === 'undefined') {
+                    debug('Loading earthjs fallback...');
+                    loadEarthJSFallback();
+                }
             }
-        }, 1000);
+        }, 2000);
         
         function createRealisticEarth() {
             try {
@@ -150,6 +168,49 @@
             } catch (error) {
                 debug('earthjs error: ' + error.message);
             }
+        }
+        
+        // Fallback loading functions
+        function loadThreeJSFallback() {
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/three@0.128.0/build/three.min.js';
+            script.onload = function() {
+                debug('✓ THREE.js fallback loaded');
+                checkAndCreate();
+            };
+            script.onerror = function() {
+                debug('✗ THREE.js fallback failed');
+            };
+            document.head.appendChild(script);
+        }
+        
+        function loadEarthJSFallback() {
+            var script = document.createElement('script');
+            script.src = 'https://github.com/earthjs/earthjs/releases/download/v1.0.0/earthjs.min.js';
+            script.onload = function() {
+                debug('✓ earthjs fallback loaded');
+                checkAndCreate();
+            };
+            script.onerror = function() {
+                debug('✗ earthjs fallback failed');
+                debug('Trying basic SVG fallback...');
+                createSVGFallback();
+            };
+            document.head.appendChild(script);
+        }
+        
+        function checkAndCreate() {
+            if (typeof earthjs !== 'undefined' && typeof THREE !== 'undefined') {
+                debug('✓ Creating Earth with fallback libs');
+                createRealisticEarth();
+            }
+        }
+        
+        // Basic SVG fallback if all else fails
+        function createSVGFallback() {
+            var earthDiv = document.getElementById('earth');
+            earthDiv.innerHTML = '<div style="width: 400px; height: 400px; border-radius: 50%; background: linear-gradient(45deg, #4fc3f7, #228b22); animation: rotate 20s linear infinite;"></div>';
+            debug('✓ Basic CSS Earth fallback active');
         }
         
         // Handle window resize
