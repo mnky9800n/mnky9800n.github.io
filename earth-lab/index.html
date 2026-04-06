@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earth-lab.ai</title>
     
-    <!-- Use HTTPS CDN URLs for Safari compatibility -->
+    <!-- Try multiple CDN sources for Safari compatibility -->
     <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
     <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
     <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
+    <script src="https://threejs.org/build/three.min.js"></script>
     
     <style media="screen">
         * {
@@ -89,6 +89,36 @@
             display: block;
             cursor: grab;
         }
+        
+        #css-fallback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        
+        .css-earth {
+            font-size: 200px;
+            animation: rotate 20s linear infinite;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .css-earth:active {
+            transform: scale(1.1);
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .css-earth {
+                font-size: 150px;
+            }
+        }
 
         /* earthjs styling from README example */
         .countries path {
@@ -141,6 +171,9 @@
         <h1 class="main-title">earth-lab.ai</h1>
         <svg id="earth"></svg>
         <div id="fallback-container"></div>
+        <div id="css-fallback" style="display: none;">
+            <div class="css-earth">🌍</div>
+        </div>
         <div class="contact">contact@earth-lab.ai</div>
     </div>
     
@@ -190,7 +223,8 @@
                     debug('earthjs failed, using Three.js fallback...');
                     initThreeJSFallback();
                 } else {
-                    debug('ERROR: No 3D library available');
+                    debug('ERROR: No 3D library available, using CSS fallback');
+                    initCSSFallback();
                 }
                 
             } catch (error) {
@@ -198,13 +232,17 @@
                 if (typeof THREE !== 'undefined') {
                     debug('Trying Three.js fallback...');
                     initThreeJSFallback();
+                } else {
+                    debug('Trying CSS fallback...');
+                    initCSSFallback();
                 }
             }
         }
         
         // Three.js geological sphere fallback
         function initThreeJSFallback() {
-            var container = document.getElementById('fallback-container');
+            try {
+                var container = document.getElementById('fallback-container');
             
             var scene = new THREE.Scene();
             var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -254,6 +292,24 @@
             animate();
             
             debug('Three.js fallback working!');
+            
+            setTimeout(function() {
+                debugEl.style.display = 'none';
+            }, 3000);
+            
+            } catch (error) {
+                debug('Three.js fallback failed: ' + error.message);
+                debug('Trying CSS fallback...');
+                initCSSFallback();
+            }
+        }
+        
+        // Pure CSS fallback for when all libraries fail
+        function initCSSFallback() {
+            var cssEarth = document.getElementById('css-fallback');
+            cssEarth.style.display = 'block';
+            
+            debug('CSS Earth emoji fallback active!');
             
             setTimeout(function() {
                 debugEl.style.display = 'none';
