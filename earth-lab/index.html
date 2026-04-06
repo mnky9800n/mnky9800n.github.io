@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earth-lab.ai</title>
     
-    <!-- earthjs dependencies from README -->
+    <!-- Use HTTPS CDN URLs for Safari compatibility -->
     <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
     <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
     <script type='text/javascript' src='https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js'></script>
-    
-    <!-- Three.js for geological layers -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
     
     <style media="screen">
         * {
@@ -44,7 +41,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(2rem, 8vw, 4rem);
+            font-size: 2rem;
             font-weight: normal;
             z-index: 100;
             pointer-events: none;
@@ -56,7 +53,7 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            font-size: clamp(0.8rem, 3vw, 1.2rem);
+            font-size: 1rem;
             z-index: 100;
             pointer-events: none;
             user-select: none;
@@ -70,25 +67,18 @@
             transform: translate(-50%, -50%);
             z-index: 10;
             cursor: grab;
+            width: 300px;
+            height: 300px;
         }
 
         #earth:active {
             cursor: grabbing;
         }
 
-        /* Three.js geological layers behind earth */
-        #geological-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 5;
-            pointer-events: none;
-        }
-
         /* earthjs styling from README example */
         .countries path {
-            fill: rgba(117, 87, 57, 0.7);
-            stroke: rgba(80, 64, 39, 0.8);
+            fill: rgb(117, 87, 57);
+            stroke: rgb(80, 64, 39);
             stroke-linejoin: round;
             stroke-width: 1.5;
             opacity: 1;
@@ -101,16 +91,33 @@
             stroke-width: 0.5;
         }
 
-        /* Mobile adjustments */
+        /* Mobile specific */
         @media (max-width: 768px) {
             .main-title {
-                font-size: clamp(1.5rem, 10vw, 3rem);
+                font-size: 1.5rem;
             }
             
             .contact {
                 bottom: 1rem;
-                font-size: clamp(0.7rem, 4vw, 1rem);
+                font-size: 0.8rem;
             }
+            
+            #earth {
+                width: 250px;
+                height: 250px;
+            }
+        }
+
+        #debug {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            font-size: 12px;
+            z-index: 1000;
+            max-width: 300px;
         }
     </style>
 </head>
@@ -121,6 +128,63 @@
         <div class="contact">contact@earth-lab.ai</div>
     </div>
     
-    <script src="script.js"></script>
+    <div id="debug">Loading...</div>
+    
+    <script>
+        var debugEl = document.getElementById('debug');
+        
+        function debug(msg) {
+            console.log(msg);
+            debugEl.innerHTML += msg + '<br>';
+        }
+        
+        // Check if libraries loaded
+        debug('User agent: ' + navigator.userAgent);
+        debug('D3 loaded: ' + (typeof d3 !== 'undefined'));
+        debug('topojson loaded: ' + (typeof topojson !== 'undefined'));
+        debug('earthjs loaded: ' + (typeof earthjs !== 'undefined'));
+        
+        // Simple earthjs implementation
+        function initEarth() {
+            try {
+                debug('Starting earthjs init...');
+                
+                if (typeof earthjs === 'undefined') {
+                    debug('ERROR: earthjs not loaded');
+                    return;
+                }
+                
+                var g = earthjs()
+                    .register(earthjs.plugins.graticuleSvg())
+                    .register(earthjs.plugins.autorotatePlugin(10))
+                    .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'));
+                    
+                g.svg('#earth');
+                
+                debug('earthjs configured, waiting for ready...');
+                
+                g.ready(function() {
+                    debug('earthjs ready, creating...');
+                    g.create();
+                    debug('earthjs created successfully!');
+                    
+                    // Hide debug after 3 seconds if successful
+                    setTimeout(function() {
+                        debugEl.style.display = 'none';
+                    }, 3000);
+                });
+                
+            } catch (error) {
+                debug('ERROR: ' + error.message);
+            }
+        }
+        
+        // Wait for page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initEarth);
+        } else {
+            initEarth();
+        }
+    </script>
 </body>
 </html>
