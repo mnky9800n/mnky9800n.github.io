@@ -13,8 +13,8 @@
       
       body {
         font-family: 'Courier New', monospace;
-        background: #ffffff;
-        color: #000000;
+        background: #000000;
+        color: #ffffff;
         overflow: hidden;
         height: 100vh;
         width: 100vw;
@@ -30,6 +30,7 @@
         z-index: 100;
         pointer-events: none;
         user-select: none;
+        color: #d62a58;
       }
       
       .contact {
@@ -41,6 +42,7 @@
         z-index: 100;
         pointer-events: none;
         user-select: none;
+        color: #f06926;
       }
       
       #earth-canvas {
@@ -61,51 +63,122 @@
     
     <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <script>
-      let scene, camera, renderer, earth;
+      let scene, camera, renderer, planet, grassMesh;
       let isDragging = false;
       let startX = 0, startY = 0;
       let rotationX = 0, rotationY = 0;
+      let time = 0;
+      
+      const PLANET_RADIUS = 5;
+      const GRASS_COUNT = 8000;
       
       function init() {
-        // Scene
+        // Scene with black background
         scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
         
-        // Camera
+        // Camera positioned above planet
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 5;
+        camera.position.set(0, 12, 0);
+        camera.lookAt(0, 0, 0);
         
         // Renderer
         renderer = new THREE.WebGLRenderer({ 
-          antialias: true, 
-          alpha: true 
+          antialias: true,
+          powerPreference: "high-performance"
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0xffffff, 0);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.domElement.id = 'earth-canvas';
         document.getElementById('earth-container').appendChild(renderer.domElement);
         
-        // Create Earth sphere
-        const geometry = new THREE.SphereGeometry(2, 64, 64);
-        const material = new THREE.MeshLambertMaterial({
-          color: 0x228b22
+        // Create planet with grass-world colors
+        createPlanet();
+        createGrass();
+        setupLighting();
+        setupEvents();
+        animate();
+      }
+      
+      function createPlanet() {
+        const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 32, 32);
+        const material = new THREE.MeshStandardMaterial({
+          color: '#32194c',      // Dark purple base
+          emissive: '#b3292e',   // Red emissive glow
+          emissiveIntensity: 0.3,
+          metalness: 0.18,
+          roughness: 0.68
         });
         
-        earth = new THREE.Mesh(geometry, material);
-        scene.add(earth);
+        planet = new THREE.Mesh(geometry, material);
+        planet.receiveShadow = true;
+        planet.castShadow = true;
+        scene.add(planet);
+      }
+      
+      function createGrass() {
+        // Simple grass blade geometry
+        const grassGeometry = new THREE.CylinderGeometry(0.02, 0.05, 0.6, 3);
+        grassGeometry.translate(0, 0.3, 0); // Move pivot to base
         
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Create instanced mesh for performance
+        grassMesh = new THREE.InstancedMesh(grassGeometry, null, GRASS_COUNT);
+        
+        // Grass material with pink/purple colors like grass-world
+        const grassMaterial = new THREE.MeshStandardMaterial({
+          color: '#d62a58',      // Pink grass color
+          emissive: '#1c1a3d',   // Dark purple emissive
+          emissiveIntensity: 0.1,
+          roughness: 0.8,
+          metalness: 0.1
+        });
+        
+        grassMesh.material = grassMaterial;
+        grassMesh.receiveShadow = true;
+        grassMesh.castShadow = true;
+        
+        // Position grass blades randomly on planet surface
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < GRASS_COUNT; i++) {
+          // Random point on sphere surface
+          const phi = Math.random() * Math.PI * 2;
+          const theta = Math.acos(1 - 2 * Math.random());
+          
+          const x = PLANET_RADIUS * Math.sin(theta) * Math.cos(phi);
+          const y = PLANET_RADIUS * Math.cos(theta);
+          const z = PLANET_RADIUS * Math.sin(theta) * Math.sin(phi);
+          
+          dummy.position.set(x, y, z);
+          dummy.lookAt(x * 2, y * 2, z * 2); // Face outward from planet
+          dummy.rotateX(Math.random() * 0.3 - 0.15); // Random tilt
+          dummy.scale.setScalar(0.8 + Math.random() * 0.4); // Random size
+          dummy.updateMatrix();
+          
+          grassMesh.setMatrixAt(i, dummy.matrix);
+        }
+        
+        grassMesh.instanceMatrix.needsUpdate = true;
+        scene.add(grassMesh);
+      }
+      
+      function setupLighting() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
         scene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(-1, 1, 1);
-        scene.add(directionalLight);
+        // Main spotlight like grass-world
+        const spotLight = new THREE.SpotLight(0xffffff, 1.5 * Math.PI);
+        spotLight.position.set(15, 15, -20);
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        scene.add(spotLight);
         
-        // Events
-        setupEvents();
-        
-        // Start animation
-        animate();
+        // Secondary light
+        const spotLight2 = new THREE.SpotLight(0xffffff, 0.85 * Math.PI);
+        spotLight2.position.set(-10, 15, 20);
+        scene.add(spotLight2);
       }
       
       function setupEvents() {
@@ -152,12 +225,6 @@
       }
       
       function onPointerEnd(event) {
-        if (!isDragging) {
-          earth.material.color.setHex(0x4A90E2);
-          setTimeout(() => {
-            earth.material.color.setHex(0x228b22);
-          }, 300);
-        }
         startX = 0;
         startY = 0;
       }
@@ -170,13 +237,25 @@
       
       function animate() {
         requestAnimationFrame(animate);
+        time += 0.01;
         
+        // Auto-rotation when not dragging
         if (!isDragging) {
-          rotationY += 0.005;
+          rotationY += 0.003;
         }
         
-        earth.rotation.x = rotationX;
-        earth.rotation.y = rotationY;
+        // Apply rotations to planet and grass together
+        if (planet && grassMesh) {
+          planet.rotation.x = rotationX;
+          planet.rotation.y = rotationY;
+          grassMesh.rotation.x = rotationX;
+          grassMesh.rotation.y = rotationY;
+        }
+        
+        // Simple wind animation for grass
+        if (grassMesh && grassMesh.material.emissiveIntensity !== undefined) {
+          grassMesh.material.emissiveIntensity = 0.1 + Math.sin(time) * 0.05;
+        }
         
         renderer.render(scene, camera);
       }
