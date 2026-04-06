@@ -53,6 +53,35 @@
             cursor: grabbing;
         }
 
+        #earth-surface {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            cursor: grab;
+        }
+
+        #earth-surface:active {
+            cursor: grabbing;
+        }
+
+        /* earthjs styling */
+        .countries path {
+            fill: rgba(117, 87, 57, 0.6);
+            stroke: rgba(80, 64, 39, 0.8);
+            stroke-linejoin: round;
+            stroke-width: 1.5;
+            opacity: 1;
+        }
+        
+        .graticule path {
+            fill: none;
+            opacity: 0.2;
+            stroke: black;
+            stroke-width: 0.5;
+        }
+
         #debug {
             position: fixed;
             top: 10px;
@@ -69,8 +98,17 @@
     <h1 class="main-title">earth-lab.ai</h1>
     <div class="contact">contact@earth-lab.ai</div>
     
+    <!-- earthjs surface with geography -->
+    <svg id="earth-surface"></svg>
+    
     <div id="debug">Loading...</div>
     
+    <!-- Load D3 and earthjs -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js"></script>
+    
+    <!-- Load Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" 
             onload="console.log('Primary Three.js CDN loaded')" 
             onerror="loadBackupThreeJS()"></script>
@@ -109,17 +147,30 @@
         }
         
         debug('User agent: ' + navigator.userAgent.substring(0, 60) + '...');
+        debug('D3 loaded: ' + (typeof d3 !== 'undefined'));
+        debug('topojson loaded: ' + (typeof topojson !== 'undefined'));
+        debug('earthjs loaded: ' + (typeof earthjs !== 'undefined'));
         debug('THREE loaded: ' + (typeof THREE !== 'undefined'));
         
-        // Wait a bit for script to load, then check again
+        // Wait a bit for all scripts to load, then check again
         setTimeout(function() {
-            debug('THREE loaded after delay: ' + (typeof THREE !== 'undefined'));
+            debug('Libraries after delay:');
+            debug('- earthjs: ' + (typeof earthjs !== 'undefined'));
+            debug('- THREE: ' + (typeof THREE !== 'undefined'));
             
             if (typeof THREE === 'undefined') {
                 debug('ERROR: THREE.js failed to load from all CDNs');
             } else {
-                debug('Starting Three.js...');
+                debug('Starting Three.js geological layers...');
                 initThreeJS();
+                
+                // Add earthjs surface if available
+                if (typeof earthjs !== 'undefined') {
+                    debug('Adding earthjs geography surface...');
+                    initEarthJS();
+                } else {
+                    debug('earthjs not available, using geological layers only');
+                }
             }
         }, 1000);
         
@@ -212,6 +263,7 @@
         function setupEvents() {
             var canvas = renderer.domElement;
             
+            // Events on Three.js canvas
             canvas.addEventListener('mousedown', onPointerStart);
             canvas.addEventListener('mousemove', onPointerMove);
             canvas.addEventListener('mouseup', onPointerEnd);
@@ -220,6 +272,19 @@
             canvas.addEventListener('touchend', onPointerEnd);
             
             window.addEventListener('resize', onResize);
+        }
+        
+        // Add events to earthjs surface when it's created
+        function addEarthJSEvents() {
+            var earthSurface = document.getElementById('earth-surface');
+            if (earthSurface) {
+                earthSurface.addEventListener('mousedown', onPointerStart);
+                earthSurface.addEventListener('mousemove', onPointerMove);
+                earthSurface.addEventListener('mouseup', onPointerEnd);
+                earthSurface.addEventListener('touchstart', onPointerStart);
+                earthSurface.addEventListener('touchmove', onPointerMove);
+                earthSurface.addEventListener('touchend', onPointerEnd);
+            }
         }
         
         function onPointerStart(event) {
@@ -289,6 +354,13 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            // Resize earthjs globe if it exists
+            if (earthjsGlobe) {
+                var minDim = Math.min(window.innerWidth, window.innerHeight);
+                var globeSize = minDim * 0.4;
+                earthjsGlobe.width(globeSize).height(globeSize).refresh();
+            }
         }
         
         function animate() {
@@ -302,7 +374,52 @@
             earthGroup.rotation.x = rotationX;
             earthGroup.rotation.y = rotationY;
             
+            // Sync earthjs rotation if available
+            if (earthjsGlobe && earthjsGlobe.projection) {
+                var degX = (rotationX * 180 / Math.PI);
+                var degY = (rotationY * 180 / Math.PI);
+                earthjsGlobe.projection().rotate([degY * 50, -degX * 50, 0]);
+                earthjsGlobe.refresh();
+            }
+            
             renderer.render(scene, camera);
+        }
+        
+        // Initialize earthjs geography surface
+        var earthjsGlobe;
+        
+        function initEarthJS() {
+            try {
+                // Calculate globe size to match Three.js layers
+                var minDim = Math.min(window.innerWidth, window.innerHeight);
+                var globeSize = minDim * 0.4;
+                
+                // Use earthjs README example pattern
+                earthjsGlobe = earthjs({
+                    width: globeSize,
+                    height: globeSize
+                })
+                .register(earthjs.plugins.graticuleSvg())
+                .register(earthjs.plugins.autorotatePlugin(10))
+                .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
+                .svg('#earth-surface');
+                
+                earthjsGlobe.ready(function() {
+                    earthjsGlobe.create();
+                    debug('earthjs geography surface created!');
+                    
+                    // Add event listeners to earthjs surface
+                    addEarthJSEvents();
+                    
+                    // Hide debug after both systems are working
+                    setTimeout(function() {
+                        debugEl.style.display = 'none';
+                    }, 3000);
+                });
+                
+            } catch (error) {
+                debug('earthjs error: ' + error.message);
+            }
         }
     </script>
 </body>
