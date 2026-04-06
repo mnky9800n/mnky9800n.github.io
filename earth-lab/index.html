@@ -1,250 +1,233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>earth-lab.ai</title>
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Courier New', monospace;
-            background-color: #ffffff;
-            color: #000000;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        .main-title {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: clamp(2rem, 8vw, 4rem);
-            font-weight: normal;
-            z-index: 100;
-            pointer-events: none;
-            user-select: none;
-        }
-
-        .contact {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: clamp(0.8rem, 3vw, 1.2rem);
-            z-index: 100;
-            pointer-events: none;
-            user-select: none;
-        }
-
-        #earth {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            cursor: grab;
-        }
-
-        #earth:active {
-            cursor: grabbing;
-        }
-
-        #debug {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 5px;
-            font-size: 10px;
-            z-index: 1000;
-            max-width: 300px;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Courier New', monospace;
+        background: #ffffff;
+        color: #000000;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+      }
+      
+      .title {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: clamp(2rem, 8vw, 4rem);
+        font-weight: normal;
+        z-index: 100;
+        pointer-events: none;
+        user-select: none;
+      }
+      
+      .contact {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: clamp(0.8rem, 3vw, 1.2rem);
+        z-index: 100;
+        pointer-events: none;
+        user-select: none;
+      }
+      
+      #earth-canvas {
+        display: block;
+        cursor: grab;
+      }
+      
+      #earth-canvas:active {
+        cursor: grabbing;
+      }
+      
+      .earth-emoji {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: clamp(200px, 30vw, 400px);
+        line-height: 1;
+        animation: rotate 20s linear infinite;
+        cursor: grab;
+        user-select: none;
+        z-index: 10;
+      }
+      
+      .earth-emoji:active {
+        cursor: grabbing;
+      }
+      
+      @keyframes rotate {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
+      }
     </style>
-    
-    <!-- Load from GitHub via jsdelivr CDN (more reliable) -->
-    <script src="https://d3js.org/d3.v4.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/earthjs/earthjs@master/dist/earthjs.min.js" 
-            onload="console.log('earthjs loaded successfully')" 
-            onerror="console.log('earthjs failed to load')"></script>
-</head>
-<body>
-    <h1 class="main-title">earth-lab.ai</h1>
+  </head>
+  <body>
+    <div class="title">earth-lab.ai</div>
     <div class="contact">contact@earth-lab.ai</div>
     
-    <div id="earth"></div>
+    <!-- Three.js Earth will go here, fallback to emoji -->
+    <div id="earth-container"></div>
     
-    <div id="debug">Loading...</div>
-    
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <script>
-        var debugEl = document.getElementById('debug');
-        var debugLines = [];
-        
-        function debug(msg) {
-            console.log(msg);
-            debugLines.push(msg);
-            if (debugLines.length > 6) debugLines.shift();
-            debugEl.innerHTML = debugLines.join('<br>');
+      // Simple, clean Three.js implementation
+      let scene, camera, renderer, earth;
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let rotationX = 0, rotationY = 0;
+      
+      function init() {
+        if (typeof THREE === 'undefined') {
+          // Fallback to emoji if Three.js fails
+          document.getElementById('earth-container').innerHTML = 
+            '<div class="earth-emoji">🌍</div>';
+          return;
         }
         
-        debug('Loading from GitHub via jsdelivr...');
-        debug('D3: ' + (typeof d3 !== 'undefined'));
-        debug('topojson: ' + (typeof topojson !== 'undefined'));
-        debug('THREE: ' + (typeof THREE !== 'undefined'));
-        debug('earthjs: ' + (typeof earthjs !== 'undefined'));
+        // Scene
+        scene = new THREE.Scene();
         
-        // Wait for GitHub-hosted scripts to load
-        setTimeout(function() {
-            debug('GitHub load check:');
-            debug('THREE: ' + (typeof THREE !== 'undefined'));
-            debug('earthjs: ' + (typeof earthjs !== 'undefined'));
-            
-            if (typeof earthjs !== 'undefined' && typeof THREE !== 'undefined') {
-                debug('✓ SUCCESS: Creating realistic Earth');
-                createRealisticEarth();
-            } else if (typeof THREE !== 'undefined') {
-                debug('THREE loaded but earthjs failed');
-                debug('Trying earthjs fallback...');
-                loadEarthJSFallback();
-            } else {
-                debug('✗ FAILED: Using CSS fallback');
-                createSVGFallback();
-            }
-        }, 2000);
+        // Camera
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
         
-        function createRealisticEarth() {
-            try {
-                var minDim = Math.min(window.innerWidth, window.innerHeight);
-                var globeSize = Math.min(600, minDim * 0.7);
-                
-                // Create realistic Earth globe with actual geography
-                var earth = earthjs({
-                    width: globeSize,
-                    height: globeSize
-                })
-                .register(earthjs.plugins.threejsPlugin())
-                .register(earthjs.plugins.oceanThreejs('#4fc3f7'))
-                .register(earthjs.plugins.worldThreejs('https://unpkg.com/world-atlas/world/110m.json', '#228b22'))
-                .register(earthjs.plugins.autorotatePlugin(20))
-                .register(earthjs.plugins.inertiaThreejs())
-                .threejs('#earth');
-                
-                earth.ready(function() {
-                    debug('World atlas data loaded...');
-                    earth.create();
-                    debug('Earth with continents created!');
-                    
-                    // Check if world data actually loaded
-                    setTimeout(function() {
-                        if (earth.worldThreejs && earth.worldThreejs.data()) {
-                            debug('✓ Continents rendered successfully');
-                        } else {
-                            debug('⚠ World data may not have loaded');
-                        }
-                        
-                        setTimeout(function() {
-                            debugEl.style.display = 'none';
-                        }, 2000);
-                    }, 1000);
-                });
-                
-            } catch (error) {
-                debug('earthjs error: ' + error.message);
-            }
-        }
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ 
+          antialias: true, 
+          alpha: true 
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xffffff, 0);
+        renderer.domElement.id = 'earth-canvas';
+        document.getElementById('earth-container').appendChild(renderer.domElement);
         
-        // Try multiple earthjs sources
-        function loadEarthJSFallback() {
-            debug('Trying earthjs npm version...');
-            var script = document.createElement('script');
-            script.src = 'https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js';
-            script.onload = function() {
-                debug('✓ earthjs npm version loaded');
-                if (typeof earthjs !== 'undefined') {
-                    createRealisticEarth();
-                } else {
-                    debug('earthjs object still undefined');
-                    createSVGFallback();
-                }
-            };
-            script.onerror = function() {
-                debug('npm version failed, trying direct...');
-                loadDirectEarthJS();
-            };
-            document.head.appendChild(script);
-        }
-        
-        function loadDirectEarthJS() {
-            var script = document.createElement('script');
-            script.src = 'https://earthjs.github.io/earthjs/dist/earthjs.min.js';
-            script.onload = function() {
-                debug('✓ Direct earthjs loaded');
-                if (typeof earthjs !== 'undefined') {
-                    createRealisticEarth();
-                } else {
-                    createSVGFallback();
-                }
-            };
-            script.onerror = function() {
-                debug('All earthjs sources failed');
-                createSVGFallback();
-            };
-            document.head.appendChild(script);
-        }
-        
-        // Use Earth emoji - looks more realistic than CSS shapes
-        function createSVGFallback() {
-            var earthDiv = document.getElementById('earth');
-            var minDim = Math.min(window.innerWidth, window.innerHeight);
-            var size = Math.min(300, minDim * 0.6);
-            
-            earthDiv.innerHTML = 
-                '<div class="css-earth" style="' +
-                'font-size: ' + size + 'px; ' +
-                'line-height: 1; ' +
-                'animation: rotate 20s linear infinite; ' +
-                'cursor: grab; ' +
-                'user-select: none; ' +
-                'display: flex; ' +
-                'align-items: center; ' +
-                'justify-content: center;' +
-                '">🌍</div>';
-            
-            // Add click interaction to Earth emoji
-            var cssEarth = earthDiv.querySelector('.css-earth');
-            if (cssEarth) {
-                cssEarth.addEventListener('click', function() {
-                    this.style.transform = 'scale(1.2)';
-                    this.style.transition = 'transform 0.3s ease';
-                    var self = this;
-                    setTimeout(function() {
-                        self.style.transform = 'scale(1)';
-                    }, 300);
-                });
-            }
-            
-            debug('✓ Earth emoji fallback (shows real continents)');
-        }
-        
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            // earthjs handles this automatically
+        // Create Earth sphere
+        const geometry = new THREE.SphereGeometry(2, 64, 64);
+        const material = new THREE.MeshLambertMaterial({
+          color: 0x228b22, // Green Earth
+          transparent: false
         });
         
+        earth = new THREE.Mesh(geometry, material);
+        scene.add(earth);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(-1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Events
+        setupEvents();
+        
+        // Start animation
+        animate();
+      }
+      
+      function setupEvents() {
+        const canvas = renderer.domElement;
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', onPointerStart);
+        canvas.addEventListener('mousemove', onPointerMove);
+        canvas.addEventListener('mouseup', onPointerEnd);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', onPointerStart, { passive: false });
+        canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+        canvas.addEventListener('touchend', onPointerEnd);
+        
+        // Resize
+        window.addEventListener('resize', onResize);
+      }
+      
+      function onPointerStart(event) {
+        isDragging = false;
+        const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+        const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+        startX = clientX;
+        startY = clientY;
+      }
+      
+      function onPointerMove(event) {
+        if (!startX || !startY) return;
+        
+        const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+        const clientY = event.clientY || (event.touches && event.touches[0].clientY);
+        
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+        
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+          isDragging = true;
+          event.preventDefault();
+          
+          rotationY += deltaX * 0.01;
+          rotationX += deltaY * 0.01;
+          rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
+          
+          startX = clientX;
+          startY = clientY;
+        }
+      }
+      
+      function onPointerEnd(event) {
+        if (!isDragging) {
+          // Click to pulse
+          if (earth) {
+            earth.material.color.setHex(0x4A90E2); // Blue
+            setTimeout(() => {
+              if (earth) earth.material.color.setHex(0x228b22); // Green
+            }, 300);
+          }
+        }
+        startX = 0;
+        startY = 0;
+      }
+      
+      function onResize() {
+        if (!camera || !renderer) return;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      
+      function animate() {
+        requestAnimationFrame(animate);
+        
+        if (earth) {
+          // Auto-rotation
+          if (!isDragging) {
+            rotationY += 0.005;
+          }
+          
+          earth.rotation.x = rotationX;
+          earth.rotation.y = rotationY;
+        }
+        
+        if (renderer && scene && camera) {
+          renderer.render(scene, camera);
+        }
+      }
+      
+      // Start when page loads
+      window.addEventListener('load', init);
     </script>
-</body>
+  </body>
 </html>
