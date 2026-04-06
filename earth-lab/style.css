@@ -64,6 +64,36 @@ body {
     cursor: grabbing;
 }
 
+#earth-surface-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* earthjs styling */
+#earth-surface-container .countries path {
+    fill: rgba(139, 115, 85, 0.3);
+    stroke: rgba(80, 64, 39, 0.5);
+    stroke-linejoin: round;
+    stroke-width: 0.5;
+}
+
+#earth-surface-container .graticule path {
+    fill: none;
+    opacity: 0.2;
+    stroke: #333;
+    stroke-width: 0.3;
+}
+
+#earth-surface-container .sphere {
+    fill: none;
+    stroke: rgba(135, 206, 235, 0.3);
+    stroke-width: 1;
+}
+
 /* Mobile adjustments */
 @media (max-width: 768px) {
     .main-title {

@@ -59,6 +59,9 @@ function init() {
     // Event listeners
     setupEventListeners();
     
+    // Add earthjs surface layer
+    setTimeout(addEarthJSSurface, 100);
+    
     // Start animation loop
     animate();
 }
@@ -261,3 +264,48 @@ window.addEventListener('load', init);
 window.addEventListener('orientationchange', () => {
     setTimeout(onWindowResize, 100);
 });
+
+// Add earthjs surface layer
+function addEarthJSSurface() {
+    // Check if earthjs is available
+    if (typeof earthjs === 'undefined') {
+        console.log('earthjs not loaded, using geological layers only');
+        return;
+    }
+    
+    try {
+        // Calculate globe size to match Three.js sphere
+        const minDim = Math.min(window.innerWidth, window.innerHeight);
+        const globeSize = minDim * 0.5;
+        
+        // Create earthjs globe
+        const earthGlobe = earthjs({
+            width: globeSize,
+            height: globeSize
+        })
+        .register(earthjs.plugins.sphereSvg())
+        .register(earthjs.plugins.graticuleSvg()) 
+        .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
+        .svg('#earth-surface-container');
+        
+        // Initialize when ready
+        earthGlobe.ready(function() {
+            earthGlobe.create();
+            
+            // Sync rotation with Three.js
+            function syncRotation() {
+                if (earthGlobe.projection) {
+                    const degX = (rotationX * 180 / Math.PI);
+                    const degY = (rotationY * 180 / Math.PI);
+                    earthGlobe.projection().rotate([degY * 50, -degX * 50, 0]);
+                    earthGlobe.refresh();
+                }
+                requestAnimationFrame(syncRotation);
+            }
+            syncRotation();
+        });
+        
+    } catch (error) {
+        console.log('earthjs error:', error);
+    }
+}
