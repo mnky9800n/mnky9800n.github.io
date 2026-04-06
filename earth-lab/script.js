@@ -9,6 +9,15 @@ let mouseX = 0, mouseY = 0;
 let targetRotationX = 0, targetRotationY = 0;
 let rotationX = 0, rotationY = 0;
 
+// Click vs drag detection
+let startX = 0, startY = 0;
+let isDragging = false;
+let dragThreshold = 5; // pixels
+
+// Exploded view state
+let isExploded = false;
+let layers = [];
+
 // Initialize the scene
 function init() {
     // Create container
@@ -59,24 +68,28 @@ function createEarthLayers() {
     const baseRadius = 1;
     
     // Geological layer data (radius ratios)
-    const layers = [
-        { name: 'inner_core', radius: 0.2, color: 0xffff99, opacity: 0.7 },
-        { name: 'outer_core', radius: 0.35, color: 0xffcc00, opacity: 0.6 },
-        { name: 'mantle', radius: 0.85, color: 0xff4500, opacity: 0.5 },
-        { name: 'crust', radius: 1.0, color: 0x8b7355, opacity: 0.4 }
+    const layerData = [
+        { name: 'inner_core', radius: 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
+        { name: 'outer_core', radius: 0.35, color: 0xffcc00, opacity: 0.6, explodedDistance: 0.8 },
+        { name: 'mantle', radius: 0.85, color: 0xff4500, opacity: 0.5, explodedDistance: 1.5 },
+        { name: 'crust', radius: 1.0, color: 0x8b7355, opacity: 0.4, explodedDistance: 2.2 }
     ];
     
-    layers.forEach((layer, index) => {
-        const geometry = new THREE.SphereGeometry(baseRadius * layer.radius, 32, 32);
+    layerData.forEach((layerInfo, index) => {
+        const geometry = new THREE.SphereGeometry(baseRadius * layerInfo.radius, 32, 32);
         const material = new THREE.MeshLambertMaterial({
-            color: layer.color,
+            color: layerInfo.color,
             transparent: true,
-            opacity: layer.opacity,
+            opacity: layerInfo.opacity,
             side: THREE.DoubleSide
         });
         
         const sphere = new THREE.Mesh(geometry, material);
-        sphere.name = layer.name;
+        sphere.name = layerInfo.name;
+        sphere.userData.explodedDistance = layerInfo.explodedDistance;
+        sphere.userData.originalPosition = new THREE.Vector3(0, 0, 0);
+        
+        layers.push(sphere);
         earthGroup.add(sphere);
     });
 }
@@ -119,12 +132,15 @@ function setupEventListeners() {
 function onPointerStart(event) {
     isUserInteracting = true;
     autoRotationEnabled = false;
+    isDragging = false;
     
     const clientX = event.clientX || (event.touches && event.touches[0].clientX);
     const clientY = event.clientY || (event.touches && event.touches[0].clientY);
     
     mouseX = clientX;
     mouseY = clientY;
+    startX = clientX;
+    startY = clientY;
     
     // Clear auto-rotation timeout
     if (autoRotationTimeout) {
@@ -135,27 +151,40 @@ function onPointerStart(event) {
 function onPointerMove(event) {
     if (!isUserInteracting) return;
     
-    event.preventDefault();
-    
     const clientX = event.clientX || (event.touches && event.touches[0].clientX);
     const clientY = event.clientY || (event.touches && event.touches[0].clientY);
     
-    const deltaX = clientX - mouseX;
-    const deltaY = clientY - mouseY;
+    // Check if this is a drag (moved more than threshold)
+    const totalDeltaX = Math.abs(clientX - startX);
+    const totalDeltaY = Math.abs(clientY - startY);
     
-    // Update rotation based on mouse movement
-    targetRotationY += deltaX * 0.01;
-    targetRotationX += deltaY * 0.01;
-    
-    // Clamp vertical rotation
-    targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX));
-    
-    mouseX = clientX;
-    mouseY = clientY;
+    if (totalDeltaX > dragThreshold || totalDeltaY > dragThreshold) {
+        isDragging = true;
+        event.preventDefault();
+        
+        const deltaX = clientX - mouseX;
+        const deltaY = clientY - mouseY;
+        
+        // Update rotation based on mouse movement
+        targetRotationY += deltaX * 0.01;
+        targetRotationX += deltaY * 0.01;
+        
+        // Clamp vertical rotation
+        targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX));
+        
+        mouseX = clientX;
+        mouseY = clientY;
+    }
 }
 
 function onPointerEnd(event) {
     isUserInteracting = false;
+    
+    // Check if this was a click (not a drag)
+    if (!isDragging) {
+        // Toggle exploded view
+        toggleExplodedView();
+    }
     
     // Resume auto-rotation after delay
     autoRotationTimeout = setTimeout(() => {
@@ -169,6 +198,41 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     
     renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function toggleExplodedView() {
+    isExploded = !isExploded;
+    
+    layers.forEach((layer, index) => {
+        const targetPosition = isExploded 
+            ? new THREE.Vector3(0, 0, layer.userData.explodedDistance)
+            : layer.userData.originalPosition.clone();
+        
+        // Animate to target position
+        animateLayerTo(layer, targetPosition);
+    });
+}
+
+function animateLayerTo(layer, targetPosition) {
+    const startPosition = layer.position.clone();
+    const duration = 1000; // 1 second
+    const startTime = Date.now();
+    
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (ease-out)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        
+        layer.position.lerpVectors(startPosition, targetPosition, easedProgress);
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+    
+    animate();
 }
 
 function animate() {
