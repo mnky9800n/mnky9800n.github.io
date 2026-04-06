@@ -5,13 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earth-lab.ai</title>
     
-    <!-- Try multiple CDN sources for Safari compatibility -->
-    <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
-    <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
-    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js'></script>
-    <script src="https://threejs.org/build/three.min.js"></script>
-    
-    <style media="screen">
+    <style>
         * {
             margin: 0;
             padding: 0;
@@ -19,7 +13,7 @@
         }
 
         body {
-            font-family: 'Courier New', 'Lucida Console', monospace;
+            font-family: 'Courier New', monospace;
             background-color: #ffffff;
             color: #000000;
             overflow: hidden;
@@ -27,22 +21,12 @@
             width: 100vw;
         }
 
-        .container {
-            position: relative;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
         .main-title {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 2rem;
+            font-size: clamp(2rem, 8vw, 4rem);
             font-weight: normal;
             z-index: 100;
             pointer-events: none;
@@ -54,103 +38,19 @@
             bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 1rem;
+            font-size: clamp(0.8rem, 3vw, 1.2rem);
             z-index: 100;
             pointer-events: none;
             user-select: none;
         }
 
-        /* earthjs globe positioning */
-        #earth {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            cursor: grab;
-            width: 300px;
-            height: 300px;
-        }
-
-        #earth:active {
-            cursor: grabbing;
-        }
-        
-        #fallback-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-        }
-        
-        #fallback-container canvas {
+        #earth-canvas {
             display: block;
             cursor: grab;
         }
-        
-        #css-fallback {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 5;
-        }
-        
-        .css-earth {
-            font-size: 200px;
-            animation: rotate 20s linear infinite;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .css-earth:active {
-            transform: scale(1.1);
-        }
-        
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        @media (max-width: 768px) {
-            .css-earth {
-                font-size: 150px;
-            }
-        }
 
-        /* earthjs styling from README example */
-        .countries path {
-            fill: rgb(117, 87, 57);
-            stroke: rgb(80, 64, 39);
-            stroke-linejoin: round;
-            stroke-width: 1.5;
-            opacity: 1;
-        }
-        
-        .graticule path {
-            fill: none;
-            opacity: 0.2;
-            stroke: black;
-            stroke-width: 0.5;
-        }
-
-        /* Mobile specific */
-        @media (max-width: 768px) {
-            .main-title {
-                font-size: 1.5rem;
-            }
-            
-            .contact {
-                bottom: 1rem;
-                font-size: 0.8rem;
-            }
-            
-            #earth {
-                width: 250px;
-                height: 250px;
-            }
+        #earth-canvas:active {
+            cursor: grabbing;
         }
 
         #debug {
@@ -159,112 +59,102 @@
             left: 10px;
             background: rgba(0,0,0,0.8);
             color: white;
-            padding: 10px;
-            font-size: 12px;
+            padding: 5px;
+            font-size: 10px;
             z-index: 1000;
-            max-width: 300px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="main-title">earth-lab.ai</h1>
-        <svg id="earth"></svg>
-        <div id="fallback-container"></div>
-        <div id="css-fallback" style="display: none;">
-            <div class="css-earth">🌍</div>
-        </div>
-        <div class="contact">contact@earth-lab.ai</div>
-    </div>
+    <h1 class="main-title">earth-lab.ai</h1>
+    <div class="contact">contact@earth-lab.ai</div>
     
     <div id="debug">Loading...</div>
     
+    <script src="https://unpkg.com/three@0.167.0/build/three.min.js"></script>
     <script>
         var debugEl = document.getElementById('debug');
         
         function debug(msg) {
             console.log(msg);
-            debugEl.innerHTML += msg + '<br>';
+            debugEl.innerHTML = msg;
         }
         
-        // Check if libraries loaded
-        debug('User agent: ' + navigator.userAgent);
-        debug('D3 loaded: ' + (typeof d3 !== 'undefined'));
-        debug('topojson loaded: ' + (typeof topojson !== 'undefined'));
-        debug('earthjs loaded: ' + (typeof earthjs !== 'undefined'));
         debug('THREE loaded: ' + (typeof THREE !== 'undefined'));
         
-        // Try earthjs first, fallback to Three.js geological sphere
-        function initEarth() {
+        if (typeof THREE === 'undefined') {
+            debug('ERROR: THREE.js failed to load');
+        } else {
+            debug('Starting Three.js...');
+            initThreeJS();
+        }
+        
+        var scene, camera, renderer, earthGroup;
+        var layers = [];
+        var isExploded = false;
+        var isDragging = false;
+        var startX = 0, startY = 0;
+        var rotationX = 0, rotationY = 0;
+        
+        function initThreeJS() {
             try {
-                if (typeof earthjs !== 'undefined') {
-                    debug('Starting earthjs init...');
-                    
-                    var g = earthjs()
-                        .register(earthjs.plugins.graticuleSvg())
-                        .register(earthjs.plugins.autorotatePlugin(10))
-                        .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'));
-                        
-                    g.svg('#earth');
-                    
-                    debug('earthjs configured, waiting for ready...');
-                    
-                    g.ready(function() {
-                        debug('earthjs ready, creating...');
-                        g.create();
-                        debug('earthjs created successfully!');
-                        
-                        setTimeout(function() {
-                            debugEl.style.display = 'none';
-                        }, 3000);
-                    });
-                    
-                } else if (typeof THREE !== 'undefined') {
-                    debug('earthjs failed, using Three.js fallback...');
-                    initThreeJSFallback();
-                } else {
-                    debug('ERROR: No 3D library available, using CSS fallback');
-                    initCSSFallback();
-                }
+                // Scene
+                scene = new THREE.Scene();
+                
+                // Camera
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                camera.position.z = 4;
+                
+                // Renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setClearColor(0xffffff, 0);
+                renderer.domElement.id = 'earth-canvas';
+                document.body.appendChild(renderer.domElement);
+                
+                // Earth group
+                earthGroup = new THREE.Group();
+                scene.add(earthGroup);
+                
+                // Create geological layers
+                createLayers();
+                
+                // Lighting
+                var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+                
+                var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(-1, 1, 1);
+                scene.add(directionalLight);
+                
+                // Events
+                setupEvents();
+                
+                // Start animation
+                animate();
+                
+                debug('Three.js initialized successfully!');
+                
+                setTimeout(function() {
+                    debugEl.style.display = 'none';
+                }, 2000);
                 
             } catch (error) {
-                debug('ERROR: ' + error.message);
-                if (typeof THREE !== 'undefined') {
-                    debug('Trying Three.js fallback...');
-                    initThreeJSFallback();
-                } else {
-                    debug('Trying CSS fallback...');
-                    initCSSFallback();
-                }
+                debug('Three.js error: ' + error.message);
             }
         }
         
-        // Three.js geological sphere fallback
-        function initThreeJSFallback() {
-            try {
-                var container = document.getElementById('fallback-container');
-            
-            var scene = new THREE.Scene();
-            var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 4;
-            
-            var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0xffffff, 0);
-            container.appendChild(renderer.domElement);
-            
-            var earthGroup = new THREE.Group();
-            scene.add(earthGroup);
-            
-            // Create geological layers
-            var layers = [
-                { radius: 0.2, color: 0xffff99, opacity: 0.7 },
-                { radius: 0.35, color: 0xffcc00, opacity: 0.6 },
-                { radius: 0.85, color: 0xff4500, opacity: 0.5 },
-                { radius: 1.0, color: 0x8b7355, opacity: 0.4 }
+        function createLayers() {
+            var layerData = [
+                { name: 'inner_core', radius: 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
+                { name: 'outer_core', radius: 0.35, color: 0xffcc00, opacity: 0.6, explodedDistance: 0.8 },
+                { name: 'mantle', radius: 0.85, color: 0xff4500, opacity: 0.5, explodedDistance: 1.5 },
+                { name: 'crust', radius: 1.0, color: 0x8b7355, opacity: 0.4, explodedDistance: 2.2 }
             ];
             
-            layers.forEach(function(layerInfo) {
+            for (var i = 0; i < layerData.length; i++) {
+                var layerInfo = layerData[i];
+                
                 var geometry = new THREE.SphereGeometry(layerInfo.radius, 32, 32);
                 var material = new THREE.MeshLambertMaterial({
                     color: layerInfo.color,
@@ -272,55 +162,113 @@
                     opacity: layerInfo.opacity,
                     side: THREE.DoubleSide
                 });
+                
                 var sphere = new THREE.Mesh(geometry, material);
+                sphere.name = layerInfo.name;
+                sphere.userData = {
+                    explodedDistance: layerInfo.explodedDistance,
+                    originalPosition: new THREE.Vector3(0, 0, 0)
+                };
+                
+                layers.push(sphere);
                 earthGroup.add(sphere);
-            });
+            }
+        }
+        
+        function setupEvents() {
+            var canvas = renderer.domElement;
             
-            // Lighting
-            var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(-1, 1, 1);
-            scene.add(directionalLight);
+            canvas.addEventListener('mousedown', onPointerStart);
+            canvas.addEventListener('mousemove', onPointerMove);
+            canvas.addEventListener('mouseup', onPointerEnd);
+            canvas.addEventListener('touchstart', onPointerStart);
+            canvas.addEventListener('touchmove', onPointerMove);
+            canvas.addEventListener('touchend', onPointerEnd);
             
-            // Animation
+            window.addEventListener('resize', onResize);
+        }
+        
+        function onPointerStart(event) {
+            isDragging = false;
+            var clientX = event.clientX || (event.touches && event.touches[0].clientX);
+            var clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            startX = clientX;
+            startY = clientY;
+        }
+        
+        function onPointerMove(event) {
+            var clientX = event.clientX || (event.touches && event.touches[0].clientX);
+            var clientY = event.clientY || (event.touches && event.touches[0].clientY);
+            
+            if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) {
+                isDragging = true;
+                event.preventDefault();
+                
+                var deltaX = clientX - startX;
+                var deltaY = clientY - startY;
+                
+                rotationY += deltaX * 0.01;
+                rotationX += deltaY * 0.01;
+                rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
+                
+                startX = clientX;
+                startY = clientY;
+            }
+        }
+        
+        function onPointerEnd(event) {
+            if (!isDragging) {
+                toggleExploded();
+            }
+        }
+        
+        function toggleExploded() {
+            isExploded = !isExploded;
+            
+            for (var i = 0; i < layers.length; i++) {
+                var layer = layers[i];
+                var targetZ = isExploded ? layer.userData.explodedDistance : 0;
+                animateLayer(layer, targetZ);
+            }
+        }
+        
+        function animateLayer(layer, targetZ) {
+            var startZ = layer.position.z;
+            var startTime = Date.now();
+            var duration = 1000;
+            
             function animate() {
-                requestAnimationFrame(animate);
-                earthGroup.rotation.y += 0.005;
-                renderer.render(scene, camera);
+                var elapsed = Date.now() - startTime;
+                var progress = Math.min(elapsed / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                
+                layer.position.z = startZ + (targetZ - startZ) * eased;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
             }
             animate();
+        }
+        
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
             
-            debug('Three.js fallback working!');
-            
-            setTimeout(function() {
-                debugEl.style.display = 'none';
-            }, 3000);
-            
-            } catch (error) {
-                debug('Three.js fallback failed: ' + error.message);
-                debug('Trying CSS fallback...');
-                initCSSFallback();
+            // Auto-rotation
+            if (!isDragging) {
+                rotationY += 0.005;
             }
-        }
-        
-        // Pure CSS fallback for when all libraries fail
-        function initCSSFallback() {
-            var cssEarth = document.getElementById('css-fallback');
-            cssEarth.style.display = 'block';
             
-            debug('CSS Earth emoji fallback active!');
+            earthGroup.rotation.x = rotationX;
+            earthGroup.rotation.y = rotationY;
             
-            setTimeout(function() {
-                debugEl.style.display = 'none';
-            }, 3000);
-        }
-        
-        // Wait for page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initEarth);
-        } else {
-            initEarth();
+            renderer.render(scene, camera);
         }
     </script>
 </body>
