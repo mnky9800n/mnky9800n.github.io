@@ -78,7 +78,9 @@
     <script src="https://d3js.org/d3.v4.min.js"></script>
     <script src="https://d3js.org/topojson.v3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/earthjs/earthjs@master/dist/earthjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/earthjs/earthjs@master/dist/earthjs.min.js" 
+            onload="console.log('earthjs loaded successfully')" 
+            onerror="console.log('earthjs failed to load')"></script>
 </head>
 <body>
     <h1 class="main-title">earth-lab.ai</h1>
@@ -114,6 +116,10 @@
             if (typeof earthjs !== 'undefined' && typeof THREE !== 'undefined') {
                 debug('✓ SUCCESS: Creating realistic Earth');
                 createRealisticEarth();
+            } else if (typeof THREE !== 'undefined') {
+                debug('THREE loaded but earthjs failed');
+                debug('Trying earthjs fallback...');
+                loadEarthJSFallback();
             } else {
                 debug('✗ FAILED: Using CSS fallback');
                 createSVGFallback();
@@ -161,11 +167,80 @@
             }
         }
         
-        // Basic CSS fallback if GitHub sources fail
+        // Try multiple earthjs sources
+        function loadEarthJSFallback() {
+            debug('Trying earthjs npm version...');
+            var script = document.createElement('script');
+            script.src = 'https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js';
+            script.onload = function() {
+                debug('✓ earthjs npm version loaded');
+                if (typeof earthjs !== 'undefined') {
+                    createRealisticEarth();
+                } else {
+                    debug('earthjs object still undefined');
+                    createSVGFallback();
+                }
+            };
+            script.onerror = function() {
+                debug('npm version failed, trying direct...');
+                loadDirectEarthJS();
+            };
+            document.head.appendChild(script);
+        }
+        
+        function loadDirectEarthJS() {
+            var script = document.createElement('script');
+            script.src = 'https://earthjs.github.io/earthjs/dist/earthjs.min.js';
+            script.onload = function() {
+                debug('✓ Direct earthjs loaded');
+                if (typeof earthjs !== 'undefined') {
+                    createRealisticEarth();
+                } else {
+                    createSVGFallback();
+                }
+            };
+            script.onerror = function() {
+                debug('All earthjs sources failed');
+                createSVGFallback();
+            };
+            document.head.appendChild(script);
+        }
+        
+        // CSS Earth fallback with continents
         function createSVGFallback() {
             var earthDiv = document.getElementById('earth');
-            earthDiv.innerHTML = '<div style="width: 400px; height: 400px; border-radius: 50%; background: linear-gradient(45deg, #4fc3f7, #228b22); animation: rotate 20s linear infinite;"></div>';
-            debug('✓ CSS Earth fallback (GitHub failed)');
+            var minDim = Math.min(window.innerWidth, window.innerHeight);
+            var size = Math.min(400, minDim * 0.7);
+            
+            earthDiv.innerHTML = 
+                '<div class="css-earth" style="' +
+                'width: ' + size + 'px; ' +
+                'height: ' + size + 'px; ' +
+                'border-radius: 50%; ' +
+                'background: radial-gradient(circle at 30% 30%, #87CEEB 0%, #4682B4 40%, #228B22 40%, #006400 100%); ' +
+                'box-shadow: inset -20px -20px 60px rgba(0,0,0,0.3), 0 0 50px rgba(0,100,200,0.2); ' +
+                'animation: rotate 20s linear infinite; ' +
+                'position: relative; ' +
+                'cursor: grab;' +
+                '">' +
+                '<div style="position: absolute; top: 20%; left: 60%; width: 15%; height: 30%; background: #8B4513; border-radius: 50%; opacity: 0.8;"></div>' + // Africa
+                '<div style="position: absolute; top: 15%; left: 45%; width: 20%; height: 35%; background: #228B22; border-radius: 60%; opacity: 0.7;"></div>' + // Europe/Asia
+                '<div style="position: absolute; top: 30%; left: 15%; width: 25%; height: 40%; background: #32CD32; border-radius: 40%; opacity: 0.6;"></div>' + // Americas
+                '</div>';
+            
+            // Add click interaction to CSS Earth
+            var cssEarth = earthDiv.querySelector('.css-earth');
+            if (cssEarth) {
+                cssEarth.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.style.transition = 'transform 0.3s ease';
+                    setTimeout(function() {
+                        cssEarth.style.transform = 'scale(1)';
+                    }, 300);
+                });
+            }
+            
+            debug('✓ CSS Earth with continents + interaction');
         }
         
         // Handle window resize
