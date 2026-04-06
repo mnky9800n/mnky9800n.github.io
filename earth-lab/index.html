@@ -206,58 +206,38 @@
             document.head.appendChild(script);
         }
         
-        // CSS Earth fallback with visible continents
+        // Use Earth emoji - looks more realistic than CSS shapes
         function createSVGFallback() {
             var earthDiv = document.getElementById('earth');
             var minDim = Math.min(window.innerWidth, window.innerHeight);
-            var size = Math.min(400, minDim * 0.7);
+            var size = Math.min(300, minDim * 0.6);
             
             earthDiv.innerHTML = 
                 '<div class="css-earth" style="' +
-                'width: ' + size + 'px; ' +
-                'height: ' + size + 'px; ' +
-                'border-radius: 50%; ' +
-                'background: linear-gradient(135deg, #4A90E2 0%, #1E3A8A 50%, #065F46 100%); ' +
-                'box-shadow: inset -15px -15px 40px rgba(0,0,0,0.4), 0 0 30px rgba(0,100,200,0.3); ' +
-                'animation: rotate 30s linear infinite; ' +
-                'position: relative; ' +
+                'font-size: ' + size + 'px; ' +
+                'line-height: 1; ' +
+                'animation: rotate 20s linear infinite; ' +
                 'cursor: grab; ' +
-                'overflow: hidden;' +
-                '">' +
-                
-                // Africa
-                '<div style="position: absolute; top: 35%; left: 55%; width: 20%; height: 35%; background: #8B4513; border-radius: 60% 40% 70% 30%; transform: rotate(15deg); z-index: 2;"></div>' +
-                
-                // Europe
-                '<div style="position: absolute; top: 25%; left: 50%; width: 15%; height: 20%; background: #228B22; border-radius: 50% 70% 40% 60%; z-index: 2;"></div>' +
-                
-                // Asia 
-                '<div style="position: absolute; top: 20%; left: 70%; width: 25%; height: 30%; background: #32CD32; border-radius: 40% 60% 50% 70%; transform: rotate(-10deg); z-index: 2;"></div>' +
-                
-                // North America
-                '<div style="position: absolute; top: 20%; left: 15%; width: 20%; height: 25%; background: #90EE90; border-radius: 70% 40% 60% 50%; transform: rotate(20deg); z-index: 2;"></div>' +
-                
-                // South America  
-                '<div style="position: absolute; top: 45%; left: 25%; width: 12%; height: 30%; background: #228B22; border-radius: 30% 70% 40% 60%; transform: rotate(-15deg); z-index: 2;"></div>' +
-                
-                // Australia
-                '<div style="position: absolute; top: 60%; left: 75%; width: 10%; height: 12%; background: #8FBC8F; border-radius: 60%; z-index: 2;"></div>' +
-                
-                '</div>';
+                'user-select: none; ' +
+                'display: flex; ' +
+                'align-items: center; ' +
+                'justify-content: center;' +
+                '">🌍</div>';
             
-            // Add click interaction to CSS Earth
+            // Add click interaction to Earth emoji
             var cssEarth = earthDiv.querySelector('.css-earth');
             if (cssEarth) {
                 cssEarth.addEventListener('click', function() {
-                    this.style.transform = 'scale(1.1)';
+                    this.style.transform = 'scale(1.2)';
                     this.style.transition = 'transform 0.3s ease';
+                    var self = this;
                     setTimeout(function() {
-                        cssEarth.style.transform = 'scale(1)';
+                        self.style.transform = 'scale(1)';
                     }, 300);
                 });
             }
             
-            debug('✓ CSS Earth with continents + interaction');
+            debug('✓ Earth emoji fallback (shows real continents)');
         }
         
         // Handle window resize
