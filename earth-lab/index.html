@@ -116,26 +116,35 @@
                 var minDim = Math.min(window.innerWidth, window.innerHeight);
                 var globeSize = Math.min(600, minDim * 0.7);
                 
-                // Create realistic Earth globe using earthjs with Three.js renderer
+                // Create realistic Earth globe with actual geography
                 var earth = earthjs({
                     width: globeSize,
                     height: globeSize
                 })
                 .register(earthjs.plugins.threejsPlugin())
-                .register(earthjs.plugins.sphereThreejs())
-                .register(earthjs.plugins.worldThreejs('https://unpkg.com/world-atlas/world/110m.json'))
+                .register(earthjs.plugins.oceanThreejs('#4fc3f7'))
+                .register(earthjs.plugins.worldThreejs('https://unpkg.com/world-atlas/world/110m.json', '#228b22'))
                 .register(earthjs.plugins.autorotatePlugin(20))
                 .register(earthjs.plugins.inertiaThreejs())
                 .threejs('#earth');
                 
                 earth.ready(function() {
-                    debug('Creating realistic Earth...');
+                    debug('World atlas data loaded...');
                     earth.create();
-                    debug('Realistic Earth globe created!');
+                    debug('Earth with continents created!');
                     
+                    // Check if world data actually loaded
                     setTimeout(function() {
-                        debugEl.style.display = 'none';
-                    }, 3000);
+                        if (earth.worldThreejs && earth.worldThreejs.data()) {
+                            debug('✓ Continents rendered successfully');
+                        } else {
+                            debug('⚠ World data may not have loaded');
+                        }
+                        
+                        setTimeout(function() {
+                            debugEl.style.display = 'none';
+                        }, 2000);
+                    }, 1000);
                 });
                 
             } catch (error) {
