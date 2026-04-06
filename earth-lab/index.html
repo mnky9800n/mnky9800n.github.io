@@ -8,7 +8,8 @@
     <!-- Use HTTPS CDN URLs for Safari compatibility -->
     <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
     <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
-    <script type='text/javascript' src='https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js'></script>
+    <script type='text/javascript' src='https://cdn.jsdelivr.net/npm/earthjs@1.0.0/dist/earthjs.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
     
     <style media="screen">
         * {
@@ -74,6 +75,20 @@
         #earth:active {
             cursor: grabbing;
         }
+        
+        #fallback-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+        }
+        
+        #fallback-container canvas {
+            display: block;
+            cursor: grab;
+        }
 
         /* earthjs styling from README example */
         .countries path {
@@ -125,6 +140,7 @@
     <div class="container">
         <h1 class="main-title">earth-lab.ai</h1>
         <svg id="earth"></svg>
+        <div id="fallback-container"></div>
         <div class="contact">contact@earth-lab.ai</div>
     </div>
     
@@ -143,40 +159,105 @@
         debug('D3 loaded: ' + (typeof d3 !== 'undefined'));
         debug('topojson loaded: ' + (typeof topojson !== 'undefined'));
         debug('earthjs loaded: ' + (typeof earthjs !== 'undefined'));
+        debug('THREE loaded: ' + (typeof THREE !== 'undefined'));
         
-        // Simple earthjs implementation
+        // Try earthjs first, fallback to Three.js geological sphere
         function initEarth() {
             try {
-                debug('Starting earthjs init...');
-                
-                if (typeof earthjs === 'undefined') {
-                    debug('ERROR: earthjs not loaded');
-                    return;
+                if (typeof earthjs !== 'undefined') {
+                    debug('Starting earthjs init...');
+                    
+                    var g = earthjs()
+                        .register(earthjs.plugins.graticuleSvg())
+                        .register(earthjs.plugins.autorotatePlugin(10))
+                        .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'));
+                        
+                    g.svg('#earth');
+                    
+                    debug('earthjs configured, waiting for ready...');
+                    
+                    g.ready(function() {
+                        debug('earthjs ready, creating...');
+                        g.create();
+                        debug('earthjs created successfully!');
+                        
+                        setTimeout(function() {
+                            debugEl.style.display = 'none';
+                        }, 3000);
+                    });
+                    
+                } else if (typeof THREE !== 'undefined') {
+                    debug('earthjs failed, using Three.js fallback...');
+                    initThreeJSFallback();
+                } else {
+                    debug('ERROR: No 3D library available');
                 }
-                
-                var g = earthjs()
-                    .register(earthjs.plugins.graticuleSvg())
-                    .register(earthjs.plugins.autorotatePlugin(10))
-                    .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'));
-                    
-                g.svg('#earth');
-                
-                debug('earthjs configured, waiting for ready...');
-                
-                g.ready(function() {
-                    debug('earthjs ready, creating...');
-                    g.create();
-                    debug('earthjs created successfully!');
-                    
-                    // Hide debug after 3 seconds if successful
-                    setTimeout(function() {
-                        debugEl.style.display = 'none';
-                    }, 3000);
-                });
                 
             } catch (error) {
                 debug('ERROR: ' + error.message);
+                if (typeof THREE !== 'undefined') {
+                    debug('Trying Three.js fallback...');
+                    initThreeJSFallback();
+                }
             }
+        }
+        
+        // Three.js geological sphere fallback
+        function initThreeJSFallback() {
+            var container = document.getElementById('fallback-container');
+            
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 4;
+            
+            var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xffffff, 0);
+            container.appendChild(renderer.domElement);
+            
+            var earthGroup = new THREE.Group();
+            scene.add(earthGroup);
+            
+            // Create geological layers
+            var layers = [
+                { radius: 0.2, color: 0xffff99, opacity: 0.7 },
+                { radius: 0.35, color: 0xffcc00, opacity: 0.6 },
+                { radius: 0.85, color: 0xff4500, opacity: 0.5 },
+                { radius: 1.0, color: 0x8b7355, opacity: 0.4 }
+            ];
+            
+            layers.forEach(function(layerInfo) {
+                var geometry = new THREE.SphereGeometry(layerInfo.radius, 32, 32);
+                var material = new THREE.MeshLambertMaterial({
+                    color: layerInfo.color,
+                    transparent: true,
+                    opacity: layerInfo.opacity,
+                    side: THREE.DoubleSide
+                });
+                var sphere = new THREE.Mesh(geometry, material);
+                earthGroup.add(sphere);
+            });
+            
+            // Lighting
+            var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(-1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Animation
+            function animate() {
+                requestAnimationFrame(animate);
+                earthGroup.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            debug('Three.js fallback working!');
+            
+            setTimeout(function() {
+                debugEl.style.display = 'none';
+            }, 3000);
         }
         
         // Wait for page load
