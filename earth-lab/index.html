@@ -71,23 +71,57 @@
     
     <div id="debug">Loading...</div>
     
-    <script src="https://unpkg.com/three@0.167.0/build/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" 
+            onload="console.log('Primary Three.js CDN loaded')" 
+            onerror="loadBackupThreeJS()"></script>
+    <script>
+        // Backup Three.js loader
+        function loadBackupThreeJS() {
+            debug('Primary CDN failed, trying backup...');
+            var script = document.createElement('script');
+            script.src = 'https://threejs.org/build/three.min.js';
+            script.onload = function() {
+                debug('Backup CDN loaded successfully!');
+                setTimeout(function() {
+                    if (typeof THREE !== 'undefined') {
+                        debug('THREE available after backup load');
+                        initThreeJS();
+                    } else {
+                        debug('THREE still undefined after backup');
+                    }
+                }, 100);
+            };
+            script.onerror = function() {
+                debug('Backup CDN also failed');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
     <script>
         var debugEl = document.getElementById('debug');
+        var debugLines = [];
         
         function debug(msg) {
             console.log(msg);
-            debugEl.innerHTML = msg;
+            debugLines.push(msg);
+            if (debugLines.length > 5) debugLines.shift(); // Keep last 5 lines
+            debugEl.innerHTML = debugLines.join('<br>');
         }
         
+        debug('User agent: ' + navigator.userAgent.substring(0, 60) + '...');
         debug('THREE loaded: ' + (typeof THREE !== 'undefined'));
         
-        if (typeof THREE === 'undefined') {
-            debug('ERROR: THREE.js failed to load');
-        } else {
-            debug('Starting Three.js...');
-            initThreeJS();
-        }
+        // Wait a bit for script to load, then check again
+        setTimeout(function() {
+            debug('THREE loaded after delay: ' + (typeof THREE !== 'undefined'));
+            
+            if (typeof THREE === 'undefined') {
+                debug('ERROR: THREE.js failed to load from all CDNs');
+            } else {
+                debug('Starting Three.js...');
+                initThreeJS();
+            }
+        }, 1000);
         
         var scene, camera, renderer, earthGroup;
         var layers = [];
