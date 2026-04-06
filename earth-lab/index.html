@@ -4,21 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>earth-lab.ai</title>
+    
+    <!-- earthjs dependencies from README -->
     <script type='text/javascript' src='https://d3js.org/d3.v4.min.js'></script>
     <script type='text/javascript' src='https://d3js.org/topojson.v3.min.js'></script>
     <script type='text/javascript' src='https://unpkg.com/earthjs@1.0.0/dist/earthjs.min.js'></script>
+    
+    <!-- Three.js for geological layers -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r164/three.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <style media="screen">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', 'Lucida Console', monospace;
+            background-color: #ffffff;
+            color: #000000;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .container {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: normal;
+            z-index: 100;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .contact {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(0.8rem, 3vw, 1.2rem);
+            z-index: 100;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* earthjs globe positioning */
+        #earth {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            cursor: grab;
+        }
+
+        #earth:active {
+            cursor: grabbing;
+        }
+
+        /* Three.js geological layers behind earth */
+        #geological-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* earthjs styling from README example */
+        .countries path {
+            fill: rgba(117, 87, 57, 0.7);
+            stroke: rgba(80, 64, 39, 0.8);
+            stroke-linejoin: round;
+            stroke-width: 1.5;
+            opacity: 1;
+        }
+        
+        .graticule path {
+            fill: none;
+            opacity: 0.2;
+            stroke: black;
+            stroke-width: 0.5;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: clamp(1.5rem, 10vw, 3rem);
+            }
+            
+            .contact {
+                bottom: 1rem;
+                font-size: clamp(0.7rem, 4vw, 1rem);
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1 class="main-title">earth-lab.ai</h1>
-        <div class="earth-container">
-            <svg id="earth"></svg>
-            <div id="geological-layers"></div>
-        </div>
+        <svg id="earth"></svg>
         <div class="contact">contact@earth-lab.ai</div>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

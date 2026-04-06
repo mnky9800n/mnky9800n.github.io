@@ -1,4 +1,5 @@
-// Earth Lab - earthjs + Three.js geological layers
+// Earth Lab - earthjs (README example) + Three.js geological layers
+
 let earthjsGlobe;
 let threeScene, threeCamera, threeRenderer, geologicalGroup;
 let geologicalLayers = [];
@@ -11,48 +12,47 @@ let startX = 0, startY = 0;
 
 // Initialize everything
 function init() {
-    // Initialize earthjs globe using README example
-    initEarthJS();
+    // First: Create earthjs globe using exact README example pattern
+    createEarthJSGlobe();
     
-    // Add Three.js geological layers
-    initGeologicalLayers();
+    // Second: Add Three.js geological layers behind it
+    createGeologicalLayers();
     
-    // Setup interactions
-    setupEventListeners();
+    // Third: Setup click interactions on the earthjs globe
+    setupInteractions();
     
-    // Start render loop
+    // Fourth: Start render loop for Three.js
     animate();
 }
 
-function initEarthJS() {
+function createEarthJSGlobe() {
     // Calculate responsive globe size
     const minDim = Math.min(window.innerWidth, window.innerHeight);
-    const globeSize = minDim * 0.6;
+    const globeSize = Math.min(600, minDim * 0.8); // Cap at 600px for performance
     
-    // Create earthjs globe using the README example pattern
-    earthjsGlobe = earthjs({
+    // Use the exact earthjs README example pattern
+    const g = earthjs({
         width: globeSize,
         height: globeSize
     })
     .register(earthjs.plugins.graticuleSvg())
-    .register(earthjs.plugins.autorotatePlugin(20))
+    .register(earthjs.plugins.autorotatePlugin(10))
     .register(earthjs.plugins.worldSvg('https://unpkg.com/world-atlas/world/110m.json'))
     .svg('#earth');
     
-    earthjsGlobe.ready(function() {
-        earthjsGlobe.create();
+    g.ready(function() {
+        g.create();
+        earthjsGlobe = g; // Store reference
     });
 }
 
-function initGeologicalLayers() {
-    const container = document.getElementById('geological-layers');
-    
-    // Three.js setup
+function createGeologicalLayers() {
+    // Create Three.js scene for geological layers
     threeScene = new THREE.Scene();
     
     const aspect = window.innerWidth / window.innerHeight;
-    threeCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
-    threeCamera.position.z = 600;
+    threeCamera = new THREE.PerspectiveCamera(50, aspect, 0.1, 2000);
+    threeCamera.position.z = 800;
     
     threeRenderer = new THREE.WebGLRenderer({ 
         antialias: true, 
@@ -61,28 +61,15 @@ function initGeologicalLayers() {
     threeRenderer.setSize(window.innerWidth, window.innerHeight);
     threeRenderer.setClearColor(0xffffff, 0);
     threeRenderer.domElement.id = 'geological-canvas';
-    container.appendChild(threeRenderer.domElement);
+    document.body.appendChild(threeRenderer.domElement);
     
     // Geological layers group
     geologicalGroup = new THREE.Group();
     threeScene.add(geologicalGroup);
     
-    // Create geological layers
-    createGeologicalLayers();
-    
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    threeScene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-    directionalLight.position.set(-1, 1, 1);
-    threeScene.add(directionalLight);
-}
-
-function createGeologicalLayers() {
-    // Scale to match earthjs globe size
+    // Create geological spheres (scaled to match earthjs globe)
     const minDim = Math.min(window.innerWidth, window.innerHeight);
-    const baseRadius = minDim * 0.15; // Match earthjs globe scale
+    const baseRadius = minDim * 0.2; // Scale to match earthjs globe
     
     const layerData = [
         { name: 'inner_core', radius: baseRadius * 0.2, color: 0xffff99, opacity: 0.7, explodedDistance: 0 },
@@ -108,9 +95,17 @@ function createGeologicalLayers() {
         geologicalLayers.push(sphere);
         geologicalGroup.add(sphere);
     });
+    
+    // Add lighting for Three.js
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    threeScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    directionalLight.position.set(-1, 1, 1);
+    threeScene.add(directionalLight);
 }
 
-function setupEventListeners() {
+function setupInteractions() {
     const earthSvg = document.getElementById('earth');
     
     // Mouse events
@@ -201,10 +196,10 @@ function onWindowResize() {
     threeCamera.updateProjectionMatrix();
     threeRenderer.setSize(window.innerWidth, window.innerHeight);
     
-    // Resize earthjs
+    // Resize earthjs globe
     if (earthjsGlobe) {
         const minDim = Math.min(window.innerWidth, window.innerHeight);
-        const globeSize = minDim * 0.6;
+        const globeSize = Math.min(600, minDim * 0.8);
         earthjsGlobe.width(globeSize).height(globeSize).refresh();
     }
 }
@@ -213,7 +208,9 @@ function animate() {
     requestAnimationFrame(animate);
     
     // Render Three.js geological layers
-    threeRenderer.render(threeScene, threeCamera);
+    if (threeRenderer && threeScene && threeCamera) {
+        threeRenderer.render(threeScene, threeCamera);
+    }
 }
 
 // Start when page loads
