@@ -1,0 +1,83 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', 'Lucida Console', monospace;
+    background-color: #ffffff;
+    color: #000000;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.container {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-title {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(2rem, 8vw, 4rem);
+    font-weight: normal;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+}
+
+.contact {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(0.8rem, 3vw, 1.2rem);
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+}
+
+.earth-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#earth-canvas {
+    display: block;
+    cursor: grab;
+}
+
+#earth-canvas:active {
+    cursor: grabbing;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: clamp(1.5rem, 10vw, 3rem);
+    }
+    
+    .contact {
+        bottom: 1rem;
+        font-size: clamp(0.7rem, 4vw, 1rem);
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: clamp(1.2rem, 12vw, 2.5rem);
+    }
+}
