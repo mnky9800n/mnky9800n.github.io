@@ -270,7 +270,7 @@
         scene.add(worldGroup);
 
         const landMask = await loadLandMask();
-        createPlanet();
+        createPlanet(landMask);
         createGrass(landMask);
         setupLighting();
         setupEvents();
@@ -292,16 +292,58 @@
         animate();
       }
 
-      function createPlanet() {
-        const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 64, 64);
-        const material = new THREE.MeshStandardMaterial({
-          color: '#1e3a5f',
+      function createPlanet(mask) {
+        // Build a colored canvas from the land mask
+        var texCanvas = document.createElement('canvas');
+        texCanvas.width = mask.width;
+        texCanvas.height = mask.height;
+        var texCtx = texCanvas.getContext('2d');
+        var colored = texCtx.createImageData(mask.width, mask.height);
+        var d = colored.data;
+        for (var i = 0; i < mask.data.length; i += 4) {
+          var land = mask.data[i] > 128;
+          d[i]     = land ? 20  : 30;   // R
+          d[i + 1] = land ? 83  : 58;   // G
+          d[i + 2] = land ? 45  : 95;   // B
+          d[i + 3] = 255;               // A
+        }
+        texCtx.putImageData(colored, 0, 0);
+
+        // Emissive map: blue glow on ocean only, black on land
+        var emCanvas = document.createElement('canvas');
+        emCanvas.width = mask.width;
+        emCanvas.height = mask.height;
+        var emCtx = emCanvas.getContext('2d');
+        var emData = emCtx.createImageData(mask.width, mask.height);
+        var e = emData.data;
+        for (var j = 0; j < mask.data.length; j += 4) {
+          var isOcean = mask.data[j] <= 128;
+          e[j]     = isOcean ? 255 : 0;   // R
+          e[j + 1] = isOcean ? 255 : 0;   // G
+          e[j + 2] = isOcean ? 255 : 0;   // B
+          e[j + 3] = 255;
+        }
+        emCtx.putImageData(emData, 0, 0);
+
+        var geometry = new THREE.SphereGeometry(PLANET_RADIUS, 64, 64);
+        geometry.rotateX(-Math.PI / 2); // Align poles with Z axis to match grass
+        var texture = new THREE.CanvasTexture(texCanvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.repeat.x = -1;
+        texture.offset.x = 0.5;
+        var emissiveTex = new THREE.CanvasTexture(emCanvas);
+        emissiveTex.wrapS = THREE.RepeatWrapping;
+        emissiveTex.repeat.x = -1;
+        emissiveTex.offset.x = 0.5;
+        var material = new THREE.MeshStandardMaterial({
+          map: texture,
+          emissiveMap: emissiveTex,
           emissive: '#2563eb',
           emissiveIntensity: 0.3,
           metalness: 0.18,
           roughness: 0.68
         });
-        const planet = new THREE.Mesh(geometry, material);
+        var planet = new THREE.Mesh(geometry, material);
         planet.receiveShadow = true;
         planet.castShadow = true;
         worldGroup.add(planet);
