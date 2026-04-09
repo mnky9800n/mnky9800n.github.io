@@ -302,9 +302,9 @@
         var d = colored.data;
         for (var i = 0; i < mask.data.length; i += 4) {
           var land = mask.data[i] > 128;
-          d[i]     = land ? 20  : 30;   // R
-          d[i + 1] = land ? 83  : 58;   // G
-          d[i + 2] = land ? 45  : 95;   // B
+          d[i]     = land ? 5   : 30;   // R
+          d[i + 1] = land ? 60  : 58;   // G
+          d[i + 2] = land ? 15  : 95;   // B
           d[i + 3] = 255;               // A
         }
         texCtx.putImageData(colored, 0, 0);
@@ -318,9 +318,9 @@
         var e = emData.data;
         for (var j = 0; j < mask.data.length; j += 4) {
           var isOcean = mask.data[j] <= 128;
-          e[j]     = isOcean ? 255 : 0;   // R
-          e[j + 1] = isOcean ? 255 : 0;   // G
-          e[j + 2] = isOcean ? 255 : 0;   // B
+          e[j]     = isOcean ? 255 : 0;    // R
+          e[j + 1] = isOcean ? 255 : 0;    // G
+          e[j + 2] = isOcean ? 255 : 0;    // B
           e[j + 3] = 255;
         }
         emCtx.putImageData(emData, 0, 0);
@@ -347,6 +347,35 @@
         planet.receiveShadow = true;
         planet.castShadow = true;
         worldGroup.add(planet);
+
+        // Green continent overlay - transparent ocean, bright green land
+        var landCanvas = document.createElement('canvas');
+        landCanvas.width = mask.width;
+        landCanvas.height = mask.height;
+        var landCtx = landCanvas.getContext('2d');
+        var landImg = landCtx.createImageData(mask.width, mask.height);
+        var ld = landImg.data;
+        for (var k = 0; k < mask.data.length; k += 4) {
+          var isLandPx = mask.data[k] > 128;
+          ld[k]     = 5;    // R
+          ld[k + 1] = 90;   // G
+          ld[k + 2] = 20;   // B
+          ld[k + 3] = isLandPx ? 255 : 0;  // transparent ocean
+        }
+        landCtx.putImageData(landImg, 0, 0);
+        var landTex = new THREE.CanvasTexture(landCanvas);
+        landTex.wrapS = THREE.RepeatWrapping;
+        landTex.repeat.x = -1;
+        landTex.offset.x = 0.5;
+        var landGeom = new THREE.SphereGeometry(PLANET_RADIUS + 0.01, 64, 64);
+        landGeom.rotateX(-Math.PI / 2);
+        var landMat = new THREE.MeshBasicMaterial({
+          map: landTex,
+          transparent: true,
+          depthWrite: false
+        });
+        var landMesh = new THREE.Mesh(landGeom, landMat);
+        worldGroup.add(landMesh);
       }
 
       function createGrass(landMask) {
