@@ -40,9 +40,8 @@
         transform: translateX(-50%);
         font-size: clamp(0.8rem, 3vw, 1.2rem);
         z-index: 100;
-        pointer-events: none;
-        user-select: none;
         color: #f06926;
+        text-decoration: none;
       }
 
       #earth-canvas {
@@ -57,7 +56,7 @@
   </head>
   <body>
     <div class="title">earth-lab.ai</div>
-    <div class="contact">contact@earth-lab.ai</div>
+    <a class="contact" href="mailto:contact@earth-lab.ai">contact@earth-lab.ai</a>
 
     <div id="earth-container"></div>
 
@@ -269,78 +268,6 @@
 
         worldGroup = new THREE.Group();
         scene.add(worldGroup);
-
-        // Full axes with +/- labels
-        const axisLen = 8;
-        const axisGroup = new THREE.Group();
-
-        // Create axis lines (both directions)
-        function makeAxis(dir, color) {
-          const mat = new THREE.LineBasicMaterial({ color: color });
-          const pts = [
-            new THREE.Vector3(-dir.x * axisLen, -dir.y * axisLen, -dir.z * axisLen),
-            new THREE.Vector3(dir.x * axisLen, dir.y * axisLen, dir.z * axisLen)
-          ];
-          const geom = new THREE.BufferGeometry().setFromPoints(pts);
-          return new THREE.Line(geom, mat);
-        }
-
-        axisGroup.add(makeAxis(new THREE.Vector3(1,0,0), 0xff0000)); // X red
-        axisGroup.add(makeAxis(new THREE.Vector3(0,1,0), 0x00ff00)); // Y green
-        axisGroup.add(makeAxis(new THREE.Vector3(0,0,1), 0x0088ff)); // Z blue
-
-        // Sprite labels
-        function makeLabel(text, position, color) {
-          const canvas = document.createElement('canvas');
-          canvas.width = 64;
-          canvas.height = 32;
-          const ctx = canvas.getContext('2d');
-          ctx.fillStyle = color;
-          ctx.font = 'bold 24px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText(text, 32, 24);
-          const tex = new THREE.CanvasTexture(canvas);
-          const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
-          const sprite = new THREE.Sprite(mat);
-          sprite.position.copy(position);
-          sprite.scale.set(1.5, 0.75, 1);
-          return sprite;
-        }
-
-        axisGroup.add(makeLabel('X+', new THREE.Vector3(axisLen + 0.5, 0, 0), '#ff4444'));
-        axisGroup.add(makeLabel('X-', new THREE.Vector3(-axisLen - 0.5, 0, 0), '#ff4444'));
-        axisGroup.add(makeLabel('Y+', new THREE.Vector3(0, axisLen + 0.5, 0), '#44ff44'));
-        axisGroup.add(makeLabel('Y-', new THREE.Vector3(0, -axisLen - 0.5, 0), '#44ff44'));
-        axisGroup.add(makeLabel('Z+', new THREE.Vector3(0, 0, axisLen + 0.5), '#4488ff'));
-        axisGroup.add(makeLabel('Z-', new THREE.Vector3(0, 0, -axisLen - 0.5), '#4488ff'));
-
-        worldGroup.add(axisGroup);
-
-        // Grass axes (dashed): gX=+X, gY=-Y, gZ=-Z
-        var grassAxisGroup = new THREE.Group();
-        function makeGrassAxis(dir, color) {
-          var mat = new THREE.LineDashedMaterial({ color: color, dashSize: 0.3, gapSize: 0.2 });
-          var pts = [
-            new THREE.Vector3(-dir.x*axisLen, -dir.y*axisLen, -dir.z*axisLen),
-            new THREE.Vector3(dir.x*axisLen, dir.y*axisLen, dir.z*axisLen)
-          ];
-          var geom = new THREE.BufferGeometry().setFromPoints(pts);
-          var line = new THREE.Line(geom, mat);
-          line.computeLineDistances();
-          return line;
-        }
-        grassAxisGroup.add(makeGrassAxis(new THREE.Vector3(1,0,0), 0xffff00));   // gX = +X
-        grassAxisGroup.add(makeGrassAxis(new THREE.Vector3(0,-1,0), 0x00ffff));  // gY = -Y
-        grassAxisGroup.add(makeGrassAxis(new THREE.Vector3(0,0,-1), 0xff00ff));  // gZ = -Z
-
-        grassAxisGroup.add(makeLabel('gX+', new THREE.Vector3(axisLen+0.5, 0, 0), '#ffff00'));
-        grassAxisGroup.add(makeLabel('gX-', new THREE.Vector3(-axisLen-0.5, 0, 0), '#ffff00'));
-        grassAxisGroup.add(makeLabel('gY+', new THREE.Vector3(0, -axisLen-0.5, 0), '#00ffff'));
-        grassAxisGroup.add(makeLabel('gY-', new THREE.Vector3(0, axisLen+0.5, 0), '#00ffff'));
-        grassAxisGroup.add(makeLabel('gZ+', new THREE.Vector3(0, 0, -axisLen-0.5), '#ff00ff'));
-        grassAxisGroup.add(makeLabel('gZ-', new THREE.Vector3(0, 0, axisLen+0.5), '#ff00ff'));
-        worldGroup.add(grassAxisGroup);
-
 
         const landMask = await loadLandMask();
         createPlanet(landMask);
